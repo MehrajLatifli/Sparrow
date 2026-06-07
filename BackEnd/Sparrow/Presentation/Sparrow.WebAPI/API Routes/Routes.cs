@@ -1,0 +1,31 @@
+﻿namespace Sparrow.WebAPI.API_Routes
+{
+    public struct Routes
+    {
+        #region Auth
+
+        public const string Profile = "profile";
+        public const string DeleteProfile = Profile + "/{id:guid}";
+        public const string ProfilePassword = "profilePassword";
+        public const string UserBlockStatus = "UserBlockStatus";
+        public const string RegisterAdmin = "registerAdmin";
+        public const string RegisterUser = "registerUser";
+        public const string Login = "login";
+        public const string Logout = "logout";
+        public const string User = "user";
+        public const string UserById = User + "/{id:guid}";
+        public const string DeleteUser = User + "/{id:guid}";
+        public const string RefreshToken = "refreshtoken";
+
+        #endregion
+
+
+        #region
+
+        public const string Artist = "artist";
+        public const string ArtistById = Artist + "/{id:guid}";
+        public const string UpdateArtist = Artist;
+        public const string DeleteArtist = Artist + "/{id:guid}";
+        #endregion
+    }
+}

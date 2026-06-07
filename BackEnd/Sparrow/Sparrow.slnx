@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/Sparrow.Application/Sparrow.Application.csproj" Id="bf660a3c-50f3-4f10-92d7-e93cdcbe8654" />
+    <Project Path="Core/Sparrow.Domain/Sparrow.Domain.csproj" Id="9579fbb5-e0c4-40b3-a91f-289984d6ec38" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="Infrastructure/Sparrow.Infrastructure/Sparrow.Infrastructure.csproj" Id="94d5131d-3587-4b33-b279-7befcbedc53d" />
+    <Project Path="Infrastructure/Sparrow.Persistence/Sparrow.Persistence.csproj" Id="933c0ed0-29be-4953-b5c5-98d3da320bf7" />
+  </Folder>
+  <Folder Name="/Presentation/">
+    <Project Path="Presentation/Sparrow.WebAPI/Sparrow.WebAPI.csproj" Id="5509d22e-10cc-4185-94fd-f6f1641ab3fc" />
+  </Folder>
+</Solution>

@@ -1,0 +1,31 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Sparrow.Domain.Entities.IdentityAuth;
+
+namespace Sparrow.Domain.EntityFrameworkConfigurations.User_DbContext
+{
+    public class UserConfiguration : IEntityTypeConfiguration<User>
+    {
+        public void Configure(EntityTypeBuilder<User> entity)
+        {
+            entity.HasKey(e => e.Id).HasName("PK__User__3214EC07CC249ED2");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Birthday).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.ConfirmPassword).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.Email).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.IsActive).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.IsBlcok).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.Name).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.Password).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.ProfileImage).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.RefreshToken).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.RefreshTokenExpiryTime).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.SecretKey).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.Surname).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.UpdatedDate).HasDefaultValueSql("(NULL)");
+            entity.Property(e => e.Username).HasDefaultValueSql("(NULL)");
+        }
+    }
+}

@@ -1,0 +1,6 @@
+@Sparrow.WebAPI_HostAddress = http://localhost:5155
+
+GET {{Sparrow.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

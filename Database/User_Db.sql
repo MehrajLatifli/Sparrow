@@ -1,0 +1,111 @@
+﻿CREATE DATABASE [User_Db]
+
+
+USE [User_Db]
+
+
+CREATE TABLE [User]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [Name] NVARCHAR(max) DEFAULT NULL,
+   [Surname] NVARCHAR(max) DEFAULT NULL,
+   [Username] NVARCHAR(max) DEFAULT NULL,
+   [Password] NVARCHAR(max) DEFAULT NULL,
+   [IsBlcok] Bit DEFAULT NULL,
+   [IsActive] Bit DEFAULT NULL,
+   [ConfirmPassword] NVARCHAR(max) DEFAULT NULL ,
+   [Email] NVARCHAR(max) DEFAULT NULL,
+   [ProfileImage] NVARCHAR(max) DEFAULT NULL,
+   [Birthday] DATETIME2 DEFAULT NULL,
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+   [RefreshToken] NVARCHAR(max) DEFAULT NULL,
+   [RefreshTokenExpiryTime] datetime2 DEFAULT NULL,
+   [SecretKey]  NVARCHAR(max) DEFAULT NULL,
+);
+
+
+-- Rol
+
+CREATE TABLE [Role]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [Name] NVARCHAR(max) DEFAULT NULL,
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+);
+
+
+-- İstifadçi və Rol
+
+CREATE TABLE [UserRole]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+   
+   [UserId] UNIQUEIDENTIFIER NULL,
+   [RoleId] UNIQUEIDENTIFIER NULL,
+
+   CONSTRAINT [FK_UserId_forUserRole] FOREIGN KEY ([UserId]) REFERENCES [User] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+   CONSTRAINT [FK_RoleId_forUserRole] FOREIGN KEY ([RoleId]) REFERENCES [Role] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+
+);
+
+
+-- İstifadəçi icazələri
+
+CREATE TABLE [UserPermission]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [UserAccess] NVARCHAR(max) DEFAULT NULL,
+   [UserAccessDescription] NVARCHAR(max) DEFAULT NULL,
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+);
+
+
+-- Rol icazələri
+
+CREATE TABLE [RolePermission]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [Method] NVARCHAR(max) DEFAULT NULL,
+   [MethodDescription] NVARCHAR(max) DEFAULT NULL,
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+);
+
+
+-- İstifadçi tələbləri
+
+CREATE TABLE [UserClaim]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+   
+   [UserId] UNIQUEIDENTIFIER NULL,
+   [UserPermitionId] UNIQUEIDENTIFIER NULL,
+   
+   CONSTRAINT [FK_UserId_forUserClaim] FOREIGN KEY ([UserId]) REFERENCES [User] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+   CONSTRAINT [FK_UserPermitionId_forUserClaim] FOREIGN KEY ([UserPermitionId]) REFERENCES [UserPermission] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+);
+
+
+-- Rol tələbləri
+
+
+CREATE TABLE [RoleClaim]
+(
+   [Id] UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+   [CreatedDate] DATETIME2 DEFAULT NULL,
+   [UpdatedDate] DATETIME2 DEFAULT NULL,
+   
+   [RoleId] UNIQUEIDENTIFIER NULL,
+   [RolePermissionId] UNIQUEIDENTIFIER NULL,
+   
+   CONSTRAINT [FK_RoleId_forRoleClaim] FOREIGN KEY ([RoleId]) REFERENCES [Role] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+   CONSTRAINT [FK_RolePermissionId_forRoleClaim] FOREIGN KEY ([RolePermissionId]) REFERENCES [RolePermission] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION,
+);
+
