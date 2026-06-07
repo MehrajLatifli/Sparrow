@@ -20,12 +20,20 @@
         #endregion
 
 
-        #region
+        #region Artist
 
         public const string Artist = "artist";
         public const string ArtistById = Artist + "/{id:guid}";
         public const string UpdateArtist = Artist;
         public const string DeleteArtist = Artist + "/{id:guid}";
+        #endregion
+
+        #region Album
+
+        public const string Album = "album";
+        public const string AlbumById = Album + "/{id:guid}";
+        public const string UpdateAlbum = Album;
+        public const string DeleteAlbum = Album + "/{id:guid}";
         #endregion
     }
 }

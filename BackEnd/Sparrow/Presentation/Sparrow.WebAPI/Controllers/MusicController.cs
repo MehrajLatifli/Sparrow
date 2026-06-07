@@ -2,6 +2,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Services.Abstract.MusicServices;
@@ -98,11 +99,87 @@ namespace Sparrow.WebAPI.Controllers
         public async Task<IActionResult> DeleteArtist(Guid id)
         {
 
-            var allArtists =  _musicService.DeleteArtist(id, User);
+            await _musicService.DeleteArtist(id, User);
 
 
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
             
+        }
+
+
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.Album)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Post_AlbumForAdmin" }, CustomUserPermissions = new[] { "Create" })]
+        public async Task<IActionResult> CreateAlbum([FromForm] AlbumDTOforCreate model)
+        {
+
+            await _musicService.CreateAlbum(model, User, ServiceExtension.ConnectionStringAzure);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.AlbumName} created successfully!" });
+        }
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.Album)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_AlbumForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadAlbums()
+        {
+
+            var allAlbums = await _musicService.GetAllAlbum(User);
+
+
+            return Ok(allAlbums);
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.AlbumById)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_AlbumByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadAlbum(Guid id)
+        {
+
+            var allAlbums = await _musicService.GetByIdAlbum(id, User);
+
+
+            return Ok(allAlbums);
+        }
+
+
+        [HttpPut]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.UpdateAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Put_AlbumForAdmin" }, CustomUserPermissions = new[] { "Update" })]
+        public async Task<IActionResult> UpdateAlbum([FromForm] AlbumDTOforUpdate model)
+        {
+
+            await _musicService.UpdateAlbum(model, User, ServiceExtension.ConnectionStringAzure);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.AlbumName} updated successfully!" });
+
+        }
+
+
+        [HttpDelete]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.DeleteAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Delete_AlbumForAdmin" }, CustomUserPermissions = new[] { "Delete" })]
+        public async Task<IActionResult> DeleteAlbum(Guid id)
+        {
+
+             await _musicService.DeleteAlbum(id, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
+
         }
     }
 }
