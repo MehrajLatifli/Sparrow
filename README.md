@@ -4,16 +4,16 @@
 </br>
 
 <h1> SQL </h1>
-<a href="./Database/Music_Db.sql">Music_Db SQL file</a>
+<a href="../Sparrow/Database/Music_Db.sql">Music_Db SQL file</a>
 </br>
-<a href="./Database/User_Db.sql">User_Db SQL file</a>
+<a href="../Sparrow/Database/User_Db.sql">User_Db SQL file</a>
 
 </br>
 </br>
 
-<img src="./Assets/Sparrow%20Music_Db%20diagram.png" alt="Diagram" width="1000">
+<img src="../Sparrow/Assets/Sparrow%20Music_Db%20diagram.png" alt="Diagram" width="1000">
 </br>
-<img src="./Assets/Sparrow%20User_Db%20diagram.png" alt="Diagram" width="1000">
+<img src="../Sparrow/Assets/Sparrow%20User_Db%20diagram.png" alt="Diagram" width="1000">
 
 </br>
 </br>

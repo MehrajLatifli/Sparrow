@@ -82,7 +82,8 @@ namespace Sparrow.WebAPI
             builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperProfile>());
 
 
-            builder.Services.AddRedisConfiguration();
+            builder.Services.AddRedisConfiguration(builder.Configuration);
+
 
             builder.Services.AddPersistenceServices(builder.Configuration);
 

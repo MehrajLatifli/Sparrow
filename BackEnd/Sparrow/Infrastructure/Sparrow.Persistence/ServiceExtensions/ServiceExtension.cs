@@ -19,6 +19,7 @@ using Sparrow.Application.Cache.RedisCachePatterns.Abstract.User;
 using Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music;
 using Sparrow.Application.Cache.RedisCachePatterns.Concrete.User;
 using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
+using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.UserDTO;
@@ -53,7 +54,7 @@ namespace Sparrow.Persistence.ServiceExtensions
                 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
                 ConfigurationManager configurationManager = new ConfigurationManager();
-               
+
                 if (env != null)
                 {
                     configurationManager.SetBasePath(Directory.GetCurrentDirectory())
@@ -146,35 +147,68 @@ namespace Sparrow.Persistence.ServiceExtensions
             }
         }
 
-        public static void AddRedisConfiguration(this IServiceCollection services)
+        public static void AddRedisConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            using (var serviceProvider = services.BuildServiceProvider())
+            var redisConnectionString = configuration.GetConnectionString("RedisConnection");
+
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
             {
+                throw new ArgumentNullException(nameof(redisConnectionString), "Redis connection string is missing.");
+            }
 
-       
-                var redisConnectionString = RedisConnectionString;
+            var options = ConfigurationOptions.Parse(redisConnectionString);
 
-                if (string.IsNullOrEmpty(redisConnectionString))
+            options.AbortOnConnectFail = false;
+            options.ConnectTimeout = 3000;
+            options.ResponseTimeout = 3000;
+            options.SyncTimeout = 3000;
+
+            // 🔥 SINGLETON Redis connection (correct way)
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var mux = ConnectionMultiplexer.Connect(options);
+
+                // optional: warm-up check
+                if (!mux.IsConnected)
                 {
-                    throw new ArgumentNullException(nameof(redisConnectionString), "Redis connection string cannot be null or empty.");
+                    throw new Exception("Redis connection failed.");
                 }
 
-                var options = ConfigurationOptions.Parse(redisConnectionString);
-
-                options.AbortOnConnectFail = false;
-                options.ConnectTimeout = 3000;
-                options.ResponseTimeout = 3000;
+                return mux;
+            });
 
 
+            services.AddScoped<IAuthCacheService<UserDTOforGetandGetAll>, AuthCacheService<UserDTOforGetandGetAll>>();
 
-                services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(options));
+            services.AddScoped<IAuthCacheService<UserDTOforUpdate>, AuthCacheService<UserDTOforUpdate>>();
 
-                services.AddScoped<IAuthCacheService<UserDTOforGetandGetAll>, AuthCacheService<UserDTOforGetandGetAll>>();
-                services.AddScoped<IAuthCacheService<UserDTOforUpdate>, AuthCacheService<UserDTOforUpdate>>();
-                services.AddScoped<IAuthCacheService<UserDTOforCreate>, AuthCacheService<UserDTOforCreate>>();
-                services.AddScoped<IAuthCacheService<GetUserDTOModel>, AuthCacheService<GetUserDTOModel>>();
-            }
+            services.AddScoped<IAuthCacheService<UserDTOforCreate>, AuthCacheService<UserDTOforCreate>>();
+
+            services.AddScoped<IAuthCacheService<GetUserDTOModel>, AuthCacheService<GetUserDTOModel>>();
+
+
+            services.AddScoped<IArtistCacheService<ArtistDTOforGetandGetAll>, ArtistCacheService<ArtistDTOforGetandGetAll>>();
+
+            services.AddScoped<IArtistCacheService<ArtistDTOforUpdate>, ArtistCacheService<ArtistDTOforUpdate>>();
+
+            services.AddScoped<IArtistCacheService<ArtistDTOforCreate>, ArtistCacheService<ArtistDTOforCreate>>();
+
+
+            services.AddScoped<IAlbumCacheService<AlbumDTOforGetandGetAll>, AlbumCacheService<AlbumDTOforGetandGetAll>>();
+
+            services.AddScoped<IAlbumCacheService<AlbumDTOforUpdate>, AlbumCacheService<AlbumDTOforUpdate>>();
+
+            services.AddScoped<IAlbumCacheService<AlbumDTOforCreate>, AlbumCacheService<AlbumDTOforCreate>>();
+
+
+            services.AddScoped<IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll>, ArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll>>();
+
+            services.AddScoped<IArtistAlbumCacheService<ArtistAlbumDTOforUpdate>, ArtistAlbumCacheService<ArtistAlbumDTOforUpdate>>();
+
+            services.AddScoped<IArtistAlbumCacheService<ArtistAlbumDTOforCreate>, ArtistAlbumCacheService<ArtistAlbumDTOforCreate>>();
+
         }
+
 
 
         public static IServiceCollection AddPersistenceServices(
@@ -252,28 +286,8 @@ namespace Sparrow.Persistence.ServiceExtensions
 
 
 
-            services.AddScoped<IAuthCacheService<UserDTOforGetandGetAll>,AuthCacheService<UserDTOforGetandGetAll>>();
+           
 
-            services.AddScoped<IAuthCacheService<UserDTOforUpdate>, AuthCacheService<UserDTOforUpdate>>();
-
-            services.AddScoped<IAuthCacheService<UserDTOforCreate>,AuthCacheService<UserDTOforCreate>>();
-
-            services.AddScoped<IAuthCacheService<GetUserDTOModel>,AuthCacheService<GetUserDTOModel>>();
-
-
-            
-            services.AddScoped<IArtistCacheService<ArtistDTOforGetandGetAll>,ArtistCacheService<ArtistDTOforGetandGetAll>>();
-
-            services.AddScoped<IArtistCacheService<ArtistDTOforUpdate>,ArtistCacheService<ArtistDTOforUpdate>>();
-
-            services.AddScoped<IArtistCacheService<ArtistDTOforCreate>,ArtistCacheService<ArtistDTOforCreate>>();
-
-
-            services.AddScoped<IAlbumCacheService<AlbumDTOforGetandGetAll>, AlbumCacheService<AlbumDTOforGetandGetAll>>();
-
-            services.AddScoped<IAlbumCacheService<AlbumDTOforUpdate>, AlbumCacheService<AlbumDTOforUpdate>>();
-
-            services.AddScoped<IAlbumCacheService<AlbumDTOforCreate>, AlbumCacheService<AlbumDTOforCreate>>();
 
             return services;
         }

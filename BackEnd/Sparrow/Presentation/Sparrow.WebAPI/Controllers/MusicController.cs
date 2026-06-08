@@ -3,6 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
+using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Services.Abstract.MusicServices;
@@ -180,6 +181,37 @@ namespace Sparrow.WebAPI.Controllers
 
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
 
+        }
+
+
+
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.ArtistAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Post_ArtistAlbumForAdmin" }, CustomUserPermissions = new[] { "Create" })]
+        public async Task<IActionResult> CreateArtistAlbum([FromForm] ArtistAlbumDTOforCreate model)
+        {
+
+            await _musicService.CreateArtistAlbum(model, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"ArtistAlbum created successfully!" });
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.ArtistAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_ArtistAlbumForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadaArtistAlbums()
+        {
+
+            var allAlbums = await _musicService.GetAllArtistAlbum(User);
+
+
+            return Ok(allAlbums);
         }
     }
 }

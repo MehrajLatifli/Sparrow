@@ -1,4 +1,5 @@
 ﻿using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
+using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,13 @@ namespace Sparrow.Application.Services.Abstract.MusicServices
         public Task<AlbumDTOforGetandGetAll> GetByIdAlbum(Guid Id, ClaimsPrincipal claimsPrincipal);
         public Task UpdateAlbum(AlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure);
         public Task DeleteAlbum(Guid Id, ClaimsPrincipal claimsPrincipal);
+
+
+        public Task CreateArtistAlbum(ArtistAlbumDTOforCreate model, ClaimsPrincipal claimsPrincipal);
+        public Task<List<ArtistAlbumDTOforGetandGetAll>> GetAllArtistAlbum(ClaimsPrincipal claimsPrincipal);
+        public Task<ArtistAlbumDTOforGetandGetAll> GetByIdArtistAlbum(Guid Id, ClaimsPrincipal claimsPrincipal);
+        public Task UpdateArtistAlbum(ArtistAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal);
+        public Task DeleteArtistAlbum(Guid Id, ClaimsPrincipal claimsPrincipal);
 
 
     }
