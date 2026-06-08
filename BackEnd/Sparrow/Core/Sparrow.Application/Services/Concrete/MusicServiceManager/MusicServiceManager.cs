@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Sparrow.Application.Cache.RedisCachePatterns.Abstract.Music;
@@ -795,13 +796,39 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
                     if (cachedArtistAlbums != null && cachedArtistAlbums.Count > 0)
                     {
+
                         return cachedArtistAlbums;
                     }
+                     var artistAlbums = _artistAlbumReadRepository.GetAll().ToList();
 
 
-                    var artistAlbums = _artistAlbumReadRepository.GetAll();
 
-                    var artistAlbumsDTO = _mapper.Map<List<ArtistAlbumDTOforGetandGetAll>>(artistAlbums);
+
+                    var result = artistAlbums.Select(x => new ArtistAlbumDTOforGetandGetAll
+                    {
+                        Id = x.Id,
+                        //ArtistId_forArtistAlbum = x.ArtistId_forArtistAlbum,
+                        //AlbumId_forArtistAlbum = x.AlbumId_forArtistAlbum,
+
+                        Artist = _artistReadRepository.GetAll().Where(a => a.Id == x.ArtistId_forArtistAlbum).Select(a => new ArtistDTOforGetandGetAll
+                        {
+                         Id = a.Id,
+                         ArtistName = a.ArtistName,
+                         ImageArtist = a.ImageArtist
+                        }).FirstOrDefault(),
+
+                        Album = _albumReadRepository.GetAll().Where(a => a.Id == x.AlbumId_forArtistAlbum).Select(a => new AlbumDTOforGetandGetAll
+                        {
+                         Id = a.Id,
+                         AlbumName = a.AlbumName,
+                         ImageAlbum = a.ImageAlbum
+                        }).FirstOrDefault()})
+                        
+                        .ToList();
+
+
+
+                    var artistAlbumsDTO = _mapper.Map<List<ArtistAlbumDTOforGetandGetAll>>(result);
 
 
 
@@ -820,9 +847,67 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             }
         }
 
-        public Task<ArtistAlbumDTOforGetandGetAll> GetByIdArtistAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task<ArtistAlbumDTOforGetandGetAll> GetByIdArtistAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var artistalbum = await _artistAlbumReadRepository.GetByIdAsync(Id);
+
+                    if (artistalbum == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid ArtistAlbum ID.");
+                    }
+
+                    var artistAlbum = await _artistAlbumReadRepository.GetByIdAsync(Id);
+
+                    var artist = _artistReadRepository.GetAll()
+                         .Where(a => a.Id == artistAlbum.ArtistId_forArtistAlbum)
+                         .Select(a => new ArtistDTOforGetandGetAll
+                         {
+                             Id = a.Id,
+                             ArtistName = a.ArtistName,
+                             ImageArtist = a.ImageArtist
+                         })
+                         .FirstOrDefault();
+
+                    var album = _albumReadRepository.GetAll()
+                        .Where(a => a.Id == artistAlbum.AlbumId_forArtistAlbum)
+                        .Select(a => new AlbumDTOforGetandGetAll
+                        {
+                            Id = a.Id,
+                            AlbumName = a.AlbumName,
+                            ImageAlbum = a.ImageAlbum
+                        })
+                        .FirstOrDefault();
+
+                    var result = new ArtistAlbumDTOforGetandGetAll
+                    {
+                        Id = artistAlbum.Id,
+
+                        Artist = artist,
+                        Album = album
+                    };
+
+
+                    var ArtistAlbumDTO = _mapper.Map<ArtistAlbumDTOforGetandGetAll>(result);
+
+                    return ArtistAlbumDTO;
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
         public Task UpdateArtistAlbum(ArtistAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal)

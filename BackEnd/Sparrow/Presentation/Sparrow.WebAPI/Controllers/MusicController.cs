@@ -208,10 +208,25 @@ namespace Sparrow.WebAPI.Controllers
         public async Task<IActionResult> ReadaArtistAlbums()
         {
 
-            var allAlbums = await _musicService.GetAllArtistAlbum(User);
+            var artistalbums = await _musicService.GetAllArtistAlbum(User);
 
 
-            return Ok(allAlbums);
+            return Ok(artistalbums);
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.ArtistAlbumById)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_ArtistAlbumByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadArtistAlbum(Guid id)
+        {
+
+            var artistalbum = await _musicService.GetByIdArtistAlbum(id, User);
+
+
+            return Ok(artistalbum);
         }
     }
 }
