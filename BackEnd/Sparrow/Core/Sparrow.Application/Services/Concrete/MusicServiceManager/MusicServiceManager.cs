@@ -630,7 +630,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (albumResult == -1)
                     {
                         await _albumCacheServiceGetandGetAll.ClearAllAlbums();
-                        throw new InvalidOperationException("Failed to create the Album.");
+                        throw new InvalidOperationException("Failed to update the Album.");
 
                     }
                     else
@@ -681,7 +681,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (AlbumResult == -1)
                     {
                         await _albumCacheServiceGetandGetAll.ClearAllAlbums();
-                        throw new InvalidOperationException("Failed to create the Album.");
+                        throw new InvalidOperationException("Failed to delete the Album.");
 
                     }
                     else
@@ -910,14 +910,179 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             }
         }
 
-        public Task UpdateArtistAlbum(ArtistAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
+        public async Task UpdateArtistAlbum(ArtistAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
+
+                    TimeZone localZone = TimeZone.CurrentTimeZone;
+                    DateTime localTime = localZone.ToLocalTime(DateTime.UtcNow);
+
+
+
+                    var artistAlbum   = await _artistAlbumReadRepository.GetByIdAsync(model.Id);
+
+                    if (artistAlbum == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid ArtistAlbum ID."); 
+                        
+                    }
+
+
+                    var isArtist = _artistReadRepository
+                    .GetAll()
+                    .Any(x =>
+                        x.Id == model.ArtistId_forArtistAlbum);
+
+
+                    var isAlbum = _albumReadRepository
+                        .GetAll()
+                        .Any(x =>
+                            x.Id == model.AlbumId_forArtistAlbum);
+
+
+
+
+                    if (isArtist == false || isAlbum == false)
+                    {
+                        throw new NotFoundException("You have entered an invalid Album ID or Artist ID.");
+                    }
+
+
+
+                    artistAlbum.Id = model.Id;
+                    artistAlbum.AlbumId_forArtistAlbum = model.AlbumId_forArtistAlbum;
+                    artistAlbum.ArtistId_forArtistAlbum = model.ArtistId_forArtistAlbum;
+
+                    _artistAlbumWriteRepository.Update(artistAlbum);
+                    var artistAlbumResult = await _artistAlbumWriteRepository.SaveAsync();
+
+                    if (artistAlbumResult == -1)
+                    {
+                        await _artistAlbumCacheServiceGetandGetAll.ClearAllArtistAlbums();
+                        throw new InvalidOperationException("Failed to update the ArtistAlbum.");
+
+                    }
+                    else
+                    {
+
+
+                        var artistAlbums     = _artistAlbumReadRepository.GetAll();
+
+
+                        var result = artistAlbums.Select(x => new ArtistAlbumDTOforGetandGetAll
+                        {
+                            Id = x.Id,
+                            //ArtistId_forArtistAlbum = x.ArtistId_forArtistAlbum,
+                            //AlbumId_forArtistAlbum = x.AlbumId_forArtistAlbum,
+
+                            Artist = _artistReadRepository.GetAll().Where(a => a.Id == x.ArtistId_forArtistAlbum).Select(a => new ArtistDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                ArtistName = a.ArtistName,
+                                ImageArtist = a.ImageArtist
+                            }).FirstOrDefault(),
+
+                            Album = _albumReadRepository.GetAll().Where(a => a.Id == x.AlbumId_forArtistAlbum).Select(a => new AlbumDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                AlbumName = a.AlbumName,
+                                ImageAlbum = a.ImageAlbum
+                            }).FirstOrDefault()
+                        }).ToList();
+
+                        var artistAlbumDTOs = _mapper.Map<List<ArtistAlbumDTOforGetandGetAll>>(result);
+
+                        await _artistAlbumCacheServiceGetandGetAll.SetAllArtistAlbums(artistAlbumDTOs);
+                    }
+
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
-        public Task DeleteArtistAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task DeleteArtistAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var ArtistAlbum = await _artistAlbumReadRepository.GetByIdAsync(Id);
+
+                    if (ArtistAlbum == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid ArtistAlbum ID.");
+                    }
+
+
+                    _artistAlbumWriteRepository.Remove(ArtistAlbum);
+                    var ArtistAlbumResult = await _artistAlbumWriteRepository.SaveAsync();
+
+                    if (ArtistAlbumResult == -1)
+                    {
+                        await _artistAlbumCacheServiceGetandGetAll.ClearAllArtistAlbums();
+                        throw new InvalidOperationException("Failed to delete the ArtistAlbum.");
+
+                    }
+                    else
+                    {
+
+
+                        var ArtistAlbums = _artistAlbumReadRepository.GetAll();
+
+                        var result = ArtistAlbums.Select(x => new ArtistAlbumDTOforGetandGetAll
+                        {
+                            Id = x.Id,
+                            //ArtistId_forArtistAlbum = x.ArtistId_forArtistAlbum,
+                            //AlbumId_forArtistAlbum = x.AlbumId_forArtistAlbum,
+
+                            Artist = _artistReadRepository.GetAll().Where(a => a.Id == x.ArtistId_forArtistAlbum).Select(a => new ArtistDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                ArtistName = a.ArtistName,
+                                ImageArtist = a.ImageArtist
+                            }).FirstOrDefault(),
+
+                            Album = _albumReadRepository.GetAll().Where(a => a.Id == x.AlbumId_forArtistAlbum).Select(a => new AlbumDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                AlbumName = a.AlbumName,
+                                ImageAlbum = a.ImageAlbum
+                            }).FirstOrDefault()
+                        }).ToList();
+
+                        var ArtistAlbumDTOs = _mapper.Map<List<ArtistAlbumDTOforGetandGetAll>>(result);
+
+                        await _artistAlbumCacheServiceGetandGetAll.SetAllArtistAlbums(ArtistAlbumDTOs);
+                    }
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
         #endregion

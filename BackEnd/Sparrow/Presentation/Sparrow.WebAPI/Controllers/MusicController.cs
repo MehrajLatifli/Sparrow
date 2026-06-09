@@ -157,7 +157,7 @@ namespace Sparrow.WebAPI.Controllers
         [Route(Routes.UpdateAlbum)]
         [Produces("application/json")]
         [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Put_AlbumForAdmin" }, CustomUserPermissions = new[] { "Update" })]
-        public async Task<IActionResult> UpdateAlbum([FromForm] AlbumDTOforUpdate model)
+       public async Task<IActionResult> UpdateAlbum([FromForm] AlbumDTOforUpdate model)
         {
 
             await _musicService.UpdateAlbum(model, User, ServiceExtension.ConnectionStringAzure);
@@ -165,7 +165,7 @@ namespace Sparrow.WebAPI.Controllers
 
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.AlbumName} updated successfully!" });
 
-        }
+        } 
 
 
         [HttpDelete]
@@ -227,6 +227,37 @@ namespace Sparrow.WebAPI.Controllers
 
 
             return Ok(artistalbum);
+        }
+
+        [HttpPut]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.UpdateArtistAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Put_ArtistAlbumForAdmin" }, CustomUserPermissions = new[] { "Update" })]
+        public async Task<IActionResult> UpdateArtistAlbum([FromForm] ArtistAlbumDTOforUpdate model)
+        {
+
+            await _musicService.UpdateArtistAlbum(model, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.Id} updated successfully!" });
+
+        }
+
+
+        [HttpDelete]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.DeleteArtistAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Delete_ArtistAlbumForAdmin" }, CustomUserPermissions = new[] { "Delete" })]
+        public async Task<IActionResult> DeleteArtistAlbum(Guid id)
+        {
+
+            await _musicService.DeleteArtistAlbum(id, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
+
         }
     }
 }

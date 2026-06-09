@@ -2353,18 +2353,6 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
 
                 new RolePermissionDTOforGetandGetAll {
                       Id=Guid.NewGuid(),
-                   Method = "Post_PlaylistForAdmin",
-                   MethodDescription = "Add Playlist",
-                   CreatedDate = localTime
-                },
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
-                   Method = "Delete_PlaylistForAdmin",
-                   MethodDescription = "Remove Playlist",
-                   CreatedDate = localTime
-                },
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
                    Method = "Get_PlaylistForAdmin",
                    MethodDescription = "View Playlist",
                    CreatedDate = localTime
@@ -2375,12 +2363,6 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
                    MethodDescription = "View Playlist",
                    CreatedDate = localTime
                 },
-                new RolePermissionDTOforGetandGetAll {
-                   Id=Guid.NewGuid(),
-                   Method = "Put_PlaylistForAdmin",
-                   MethodDescription = "Update Playlist",
-                   CreatedDate = localTime
-                },
 
                 #endregion
 
@@ -2388,18 +2370,7 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
 
                 #region  PlaylistMusic
 
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
-                   Method = "Post_PlaylistMusicForAdmin",
-                   MethodDescription = "Add PlaylistMusic",
-                   CreatedDate = localTime
-                },
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
-                   Method = "Delete_PlaylistMusicForAdmin",
-                   MethodDescription = "Remove PlaylistMusic",
-                   CreatedDate = localTime
-                },
+
                 new RolePermissionDTOforGetandGetAll {
                       Id=Guid.NewGuid(),
                    Method = "Get_PlaylistMusicForAdmin",
@@ -2412,36 +2383,12 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
                    MethodDescription = "View PlaylistMusic",
                    CreatedDate = localTime
                 },
-                new RolePermissionDTOforGetandGetAll {
-                   Id=Guid.NewGuid(),
-                   Method = "Put_PlaylistMusicForAdmin",
-                   MethodDescription = "Update PlaylistMusic",
-                   CreatedDate = localTime
-                },
 
                 #endregion                
                 
                 
                 #region  PlaylistUser
 
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
-                   Method = "Post_PlaylistUserForAdmin",
-                   MethodDescription = "Add PlaylistUser",
-                   CreatedDate = localTime
-                },
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
-                   Method = "Delete_PlaylistUserForAdmin",
-                   MethodDescription = "Remove PlaylistUser",
-                   CreatedDate = localTime
-                },
-                new RolePermissionDTOforGetandGetAll {
-                      Id=Guid.NewGuid(),
-                   Method = "Get_PlaylistUserForAdmin",
-                   MethodDescription = "View PlaylistUser",
-                   CreatedDate = localTime
-                },
                 new RolePermissionDTOforGetandGetAll {
                       Id=Guid.NewGuid(),
                    Method = "Get_PlaylistUserByIdForAdmin",
