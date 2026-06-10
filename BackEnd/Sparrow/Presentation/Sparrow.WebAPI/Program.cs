@@ -117,7 +117,7 @@ namespace Sparrow.WebAPI
 
             app.UseMiddleware<ExceptionMiddleware>();
 
-            app.UseCors(x => x.AllowAnyMethod().AllowAnyHeader().SetIsOriginAllowed(origin => true).AllowCredentials());
+            app.UseCors("AllowAllPolicy");
 
             app.UseRateLimiter();
 
