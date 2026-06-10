@@ -205,7 +205,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (artistResult == -1)
                     {
                         await _artistCacheServiceGetandGetAll.ClearAllArtists();
-                        throw new InvalidOperationException("Failed to create the artist.");
+                        throw new InvalidOperationException("Failed to delete the artist.");
 
                     }
                     else
@@ -392,6 +392,10 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
         }
 
 
+
+
+        #endregion
+
         private string GetContentType(string extension)
         {
             return extension.ToLower() switch
@@ -399,6 +403,17 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                 ".png" => "image/png",
                 ".jpg" or ".jpeg" => "image/jpeg",
                 ".gif" => "image/gif",
+                _ => "application/octet-stream"
+            };
+        }
+
+        private string GetContentType2(string extension)
+        {
+            return extension.ToLower() switch
+            {
+                ".mp3" => "audio/mpeg",
+                ".wav" => "audio/wav",
+                ".flac" => "audio/flac",
                 _ => "application/octet-stream"
             };
         }
@@ -415,9 +430,6 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
             throw new InvalidOperationException("Azure Storage connection string is not configured.");
         }
-
-        #endregion
-
 
         #region Album
 
@@ -1138,7 +1150,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
                     var blobHttpHeaders2 = new BlobHttpHeaders
                     {
-                        ContentType = GetContentType(Path.GetExtension(model.MusicFile.FileName)),
+                        ContentType = GetContentType2(Path.GetExtension(model.MusicFile.FileName)),
                         ContentDisposition = "inline"
                     };
 
@@ -1287,14 +1299,166 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             ;
         }
 
-        public Task UpdateMusic(MusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
+        public async Task UpdateMusic(MusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+                    string connectionString = GetAzureConnectionString(connectionStringAzure);
+
+
+                    string containerName = "music-images";
+                    string userFolder = $"{model.MusicName}/";
+                    string blobName = $"{userFolder}{model.MusicName}_{Guid.NewGuid()}{Path.GetExtension(model.ImageMusic.FileName)}";
+
+                    var blobHttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = GetContentType(Path.GetExtension(model.ImageMusic.FileName)),
+                        ContentDisposition = "inline"
+                    };
+
+                    var blobServiceClient = new BlobServiceClient(connectionString);
+                    var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                    await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+                    var blobClient = containerClient.GetBlobClient(blobName);
+                    using (var stream = model.ImageMusic.OpenReadStream())
+                    {
+                        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeaders });
+                    }
+
+                    string imageUrl = blobClient.Uri.ToString();
+
+
+
+
+                    string containerName2 = "music-files";
+                    string userFolder2 = $"{model.MusicName}/";
+                    string blobName2 = $"{userFolder2}{model.MusicName}_{Guid.NewGuid()}{Path.GetExtension(model.MusicFile.FileName)}";
+
+                    var blobHttpHeaders2 = new BlobHttpHeaders
+                    {
+                        ContentType = GetContentType2(Path.GetExtension(model.MusicFile.FileName)),
+                        ContentDisposition = "inline"
+                    };
+
+                    var blobServiceClient2 = new BlobServiceClient(connectionString);
+                    var containerClient2 = blobServiceClient2.GetBlobContainerClient(containerName2);
+                    await containerClient2.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+                    var blobClient2 = containerClient2.GetBlobClient(blobName2);
+                    using (var stream = model.MusicFile.OpenReadStream())
+                    {
+                        await blobClient2.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeaders2 });
+                    }
+
+                    string musicUrl = blobClient2.Uri.ToString();
+
+
+                    System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
+
+                    TimeZone localZone = TimeZone.CurrentTimeZone;
+                    DateTime localTime = localZone.ToLocalTime(DateTime.UtcNow);
+
+
+
+                    var music = await _musicReadRepository.GetByIdAsync(model.Id);
+
+                    if (music == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid Music ID.");
+                    }
+
+                    music.Id = model.Id;
+                    music.MusicName = model.MusicName;
+                    music.ImageMusic = imageUrl;
+                    music.isPopularMusic = model.isPopularMusic;
+                    music.MusicFile = musicUrl;
+                    
+
+                    _musicWriteRepository.Update(music);
+                    var musicResult = await _musicWriteRepository.SaveAsync();
+
+                    if (musicResult == -1)
+                    {
+                        await _musicCacheServiceGetandGetAll.ClearAllMusics();
+                        throw new InvalidOperationException("Failed to create the music.");
+
+                    }
+                    else
+                    {
+
+
+                        var Musics = _musicReadRepository.GetAll();
+
+                        var MusicDTOs = _mapper.Map<List<MusicDTOforGetandGetAll>>(Musics);
+
+                        await _musicCacheServiceGetandGetAll.SetAllMusics(MusicDTOs);
+                    }
+
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
-        public Task DeleteMusic(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task DeleteMusic(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var music = await _musicReadRepository.GetByIdAsync(Id);
+
+                    if (music == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid Music ID.");
+                    }
+
+
+                    _musicWriteRepository.Remove(music);
+                    var musicResult = await _musicWriteRepository.SaveAsync();
+
+                    if (musicResult == -1)
+                    {
+                        await _musicCacheServiceGetandGetAll.ClearAllMusics();
+                        throw new InvalidOperationException("Failed to delete the Music.");
+
+                    }
+                    else
+                    {
+
+
+                        var musics = _musicReadRepository.GetAll();
+
+                        var musicDTOs = _mapper.Map<List<MusicDTOforGetandGetAll>>(musics);
+
+                        await _musicCacheServiceGetandGetAll.SetAllMusics(musicDTOs);
+                    }
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
         #endregion
