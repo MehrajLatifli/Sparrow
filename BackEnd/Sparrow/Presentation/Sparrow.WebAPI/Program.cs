@@ -115,8 +115,6 @@ namespace Sparrow.WebAPI
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
-
             app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseCors(x => x.AllowAnyMethod().AllowAnyHeader().SetIsOriginAllowed(origin => true).AllowCredentials());

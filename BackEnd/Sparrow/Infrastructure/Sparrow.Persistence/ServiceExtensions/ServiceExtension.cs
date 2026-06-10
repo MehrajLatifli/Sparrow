@@ -21,6 +21,7 @@ using Sparrow.Application.Cache.RedisCachePatterns.Concrete.User;
 using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
+using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.UserDTO;
 using Sparrow.Application.Repositories.Custom.MusicRepositories;
@@ -189,23 +190,16 @@ namespace Sparrow.Persistence.ServiceExtensions
 
             services.AddScoped<IArtistCacheService<ArtistDTOforGetandGetAll>, ArtistCacheService<ArtistDTOforGetandGetAll>>();
 
-            services.AddScoped<IArtistCacheService<ArtistDTOforUpdate>, ArtistCacheService<ArtistDTOforUpdate>>();
-
-            services.AddScoped<IArtistCacheService<ArtistDTOforCreate>, ArtistCacheService<ArtistDTOforCreate>>();
-
 
             services.AddScoped<IAlbumCacheService<AlbumDTOforGetandGetAll>, AlbumCacheService<AlbumDTOforGetandGetAll>>();
-
-            services.AddScoped<IAlbumCacheService<AlbumDTOforUpdate>, AlbumCacheService<AlbumDTOforUpdate>>();
-
-            services.AddScoped<IAlbumCacheService<AlbumDTOforCreate>, AlbumCacheService<AlbumDTOforCreate>>();
 
 
             services.AddScoped<IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll>, ArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll>>();
 
-            services.AddScoped<IArtistAlbumCacheService<ArtistAlbumDTOforUpdate>, ArtistAlbumCacheService<ArtistAlbumDTOforUpdate>>();
 
-            services.AddScoped<IArtistAlbumCacheService<ArtistAlbumDTOforCreate>, ArtistAlbumCacheService<ArtistAlbumDTOforCreate>>();
+            services.AddScoped<IMusicCacheService<MusicDTOforGetandGetAll>, MusicCacheService<MusicDTOforGetandGetAll>>();
+
+
 
         }
 

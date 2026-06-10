@@ -43,5 +43,13 @@
         public const string UpdateArtistAlbum = ArtistAlbum;
         public const string DeleteArtistAlbum = ArtistAlbum + "/{id:guid}";
         #endregion
+
+        #region Music
+
+        public const string Music = "music";
+        public const string MusicById = Music + "/{id:guid}";
+        public const string UpdateMusic = Music;
+        public const string DeleteMusic = Music + "/{id:guid}";
+        #endregion
     }
 }

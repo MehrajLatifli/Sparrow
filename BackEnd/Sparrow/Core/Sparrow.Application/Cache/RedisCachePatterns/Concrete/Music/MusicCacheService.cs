@@ -1,30 +1,26 @@
 ﻿using Newtonsoft.Json;
 using Sparrow.Application.Cache.RedisCachePatterns.Abstract.Music;
 using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music
 {
-    public class ArtistCacheService<T> : IArtistCacheService<T>
+    public class MusicCacheService<T> : IMusicCacheService<T>
     {
         private readonly IDatabase _database;
 
-        private const string CacheKey = "Artist:All";
+        private const string CacheKey = "Music:All";
         private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-        public ArtistCacheService(IConnectionMultiplexer connectionMultiplexer)
+        public MusicCacheService(IConnectionMultiplexer connectionMultiplexer)
         {
             _database = connectionMultiplexer?.GetDatabase()
                 ?? throw new ArgumentNullException(nameof(connectionMultiplexer));
         }
 
 
-        public async Task<List<T>> GetAllArtists()
+        public async Task<List<T>> GetAllMusics()
         {
             await _semaphore.WaitAsync();
             try
@@ -43,7 +39,7 @@ namespace Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music
         }
 
 
-        public async Task SetAllArtists(List<T> items)
+        public async Task SetAllMusics(List<T> items)
         {
             await _semaphore.WaitAsync();
             try
@@ -63,7 +59,7 @@ namespace Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music
         }
 
 
-        public async Task ClearAllArtists()
+        public async Task ClearAllMusics()
         {
             await _database.KeyDeleteAsync(CacheKey);
         }
