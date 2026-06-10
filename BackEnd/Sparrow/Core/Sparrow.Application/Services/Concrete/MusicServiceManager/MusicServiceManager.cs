@@ -1429,6 +1429,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     }
 
 
+
                     _musicWriteRepository.Remove(music);
                     var musicResult = await _musicWriteRepository.SaveAsync();
 
