@@ -1671,14 +1671,182 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             }
         }
 
-        public Task UpdateMusicAlbum(MusicAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
+        public async Task UpdateMusicAlbum(MusicAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
+
+                    TimeZone localZone = TimeZone.CurrentTimeZone;
+                    DateTime localTime = localZone.ToLocalTime(DateTime.UtcNow);
+
+
+
+                    var musicAlbum = await _musicAlbumReadRepository.GetByIdAsync(model.Id);
+
+                    if (musicAlbum == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid musicAlbum ID.");
+
+                    }
+
+
+                    var isMusic = _musicReadRepository
+                    .GetAll()
+                    .Any(x =>
+                        x.Id == model.MusicId_forMusicAlbum);
+
+
+                    var isAlbum = _albumReadRepository
+                        .GetAll()
+                        .Any(x =>
+                            x.Id == model.AlbumId_forMusicAlbum);
+
+
+
+
+                    if (isMusic == false || isAlbum == false)
+                    {
+                        throw new NotFoundException("You have entered an invalid Album ID or Music ID.");
+                    }
+
+
+
+                    musicAlbum.Id = model.Id;
+                    musicAlbum.AlbumId_forMusicAlbum = model.AlbumId_forMusicAlbum;
+                    musicAlbum.MusicId_forMusicAlbum = model.MusicId_forMusicAlbum  ;
+
+                    _musicAlbumWriteRepository.Update(musicAlbum);
+                    var musicAlbumResult = await _musicAlbumWriteRepository.SaveAsync();
+
+                    if (musicAlbumResult == -1)
+                    {
+                        await _musicAlbumCacheServiceGetandGetAll.ClearAllMusicAlbums();
+                        throw new InvalidOperationException("Failed to update the MusicAlbum.");
+
+                    }
+                    else
+                    {
+
+
+                        var musicAlbums = _musicAlbumReadRepository.GetAll();
+
+
+                        var result = musicAlbums.Select(x => new MusicAlbumDTOforGetandGetAll
+                        {
+                            Id = x.Id,
+
+
+                            Music = _musicReadRepository.GetAll().Where(a => a.Id == x.MusicId_forMusicAlbum).Select(a => new MusicDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                ImageMusic=a.ImageMusic,
+                                MusicName=a.MusicName,
+                                isPopularMusic = a.isPopularMusic,
+                                MusicFile = a.MusicFile
+                            }).FirstOrDefault(),
+
+                            Album = _albumReadRepository.GetAll().Where(a => a.Id == x.AlbumId_forMusicAlbum).Select(a => new AlbumDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                AlbumName = a.AlbumName,
+                                ImageAlbum = a.ImageAlbum
+                            }).FirstOrDefault()
+                        }).ToList();
+
+                        var musicAlbumDTOs = _mapper.Map<List<MusicAlbumDTOforGetandGetAll>>(result);
+
+                        await _musicAlbumCacheServiceGetandGetAll.SetAllMusicAlbums(musicAlbumDTOs);
+                    }
+
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            };
         }
 
-        public Task DeleteMusicAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task DeleteMusicAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var musicAlbum = await _musicAlbumReadRepository.GetByIdAsync(Id);
+
+                    if (musicAlbum == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid musicAlbum ID.");
+                    }
+
+
+                    _musicAlbumWriteRepository.Remove(musicAlbum);
+                    var musicAlbumResult = await _musicAlbumWriteRepository.SaveAsync();
+
+                    if (musicAlbumResult == -1)
+                    {
+                        await _musicAlbumCacheServiceGetandGetAll.ClearAllMusicAlbums();
+                        throw new InvalidOperationException("Failed to delete the musicAlbum.");
+
+                    }
+                    else
+                    {
+
+
+                        var musicAlbums = _musicAlbumReadRepository.GetAll();
+
+                        var result = musicAlbums.Select(x => new MusicAlbumDTOforGetandGetAll
+                        {
+                            Id = x.Id,
+                            //ArtistId_formusicAlbum = x.ArtistId_formusicAlbum,
+                            //AlbumId_formusicAlbum = x.AlbumId_formusicAlbum,
+
+                            Music = _musicReadRepository.GetAll().Where(a => a.Id == x.MusicId_forMusicAlbum).Select(a => new MusicDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                MusicName = a.MusicName,
+                                MusicFile = a.MusicFile,
+                                ImageMusic = a.ImageMusic,
+                                isPopularMusic = a.isPopularMusic
+                            }).FirstOrDefault(),
+
+                            Album = _albumReadRepository.GetAll().Where(a => a.Id == x.AlbumId_forMusicAlbum).Select(a => new AlbumDTOforGetandGetAll
+                            {
+                                Id = a.Id,
+                                AlbumName = a.AlbumName,
+                                ImageAlbum = a.ImageAlbum
+                            }).FirstOrDefault()
+                        }).ToList();
+
+                        var musicAlbumDTOs = _mapper.Map<List<MusicAlbumDTOforGetandGetAll>>(result);
+
+                        await _musicAlbumCacheServiceGetandGetAll.SetAllMusicAlbums(musicAlbumDTOs);
+                    }
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
         #endregion
