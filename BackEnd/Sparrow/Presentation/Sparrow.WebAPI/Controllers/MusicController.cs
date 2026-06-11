@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
+using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Services.Abstract.MusicServices;
@@ -337,5 +338,51 @@ namespace Sparrow.WebAPI.Controllers
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
 
         }
+
+
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.MusicAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Post_MusicAlbumForAdmin" }, CustomUserPermissions = new[] { "Create" })]
+        public async Task<IActionResult> CreateMusicAlbum([FromForm] MusicAlbumDTOforCreate model)
+        {
+
+            await _musicService.CreateMusicAlbum(model, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"MusicAlbum created successfully!" });
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.MusicAlbum)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_MusicAlbumForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadaMusicAlbums()
+        {
+
+            var musicAlbums = await _musicService.GetAllMusicAlbum(User);
+
+
+            return Ok(musicAlbums);
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.MusicAlbumById)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_MusicAlbumByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadMusicAlbum(Guid id)
+        {
+
+            var MusicAlbum = await _musicService.GetByIdMusicAlbum(id, User);
+
+
+            return Ok(MusicAlbum);
+        }
+
     }
 }

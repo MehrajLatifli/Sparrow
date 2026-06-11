@@ -51,5 +51,13 @@
         public const string UpdateMusic = Music;
         public const string DeleteMusic = Music + "/{id:guid}";
         #endregion
+
+        #region MusicAlbum
+
+        public const string MusicAlbum = "musicAlbum";
+        public const string MusicAlbumById = MusicAlbum + "/{id:guid}";
+        public const string UpdateMusicAlbum = MusicAlbum;
+        public const string DeleteMusicAlbum = MusicAlbum + "/{id:guid}";
+        #endregion
     }
 }

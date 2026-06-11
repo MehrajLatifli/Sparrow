@@ -9,6 +9,7 @@ using Sparrow.Application.Exception;
 using Sparrow.Application.Mapper.DTO.Music.AlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
+using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.UserDTO;
@@ -40,6 +41,8 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
         private readonly IMusicCacheService<MusicDTOforGetandGetAll> _musicCacheServiceGetandGetAll;
 
+        private readonly IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> _musicAlbumCacheServiceGetandGetAll;
+
 
         private readonly ILogger<MusicServiceManager> _logger;
 
@@ -63,7 +66,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
         private readonly IArtistAlbumReadRepository _artistAlbumReadRepository;
         private readonly IArtistAlbumWriteRepository _artistAlbumWriteRepository;
 
-        public MusicServiceManager(IConfiguration configuration, IMapper mapper, IArtistCacheService<ArtistDTOforGetandGetAll> artistCacheServiceGetandGetAll, IAlbumCacheService<AlbumDTOforGetandGetAll> albumCacheServiceGetandGetAll, IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll> artistAlbumCacheServiceGetandGetAll, IMusicCacheService<MusicDTOforGetandGetAll> musicCacheServiceGetandGetAll, ILogger<MusicServiceManager> logger, IUserReadRepository userReadRepository, IArtistReadRepository artistReadRepository, IArtistWriteRepository artistWriteRepository, IAlbumReadRepository albumReadRepository, IAlbumWriteRepository albumWriteRepository, IMusicWriteRepository musicWriteRepository, IMusicReadRepository musicReadRepository, IMusicAlbumReadRepository musicAlbumReadRepository, IMusicAlbumWriteRepository musicAlbumWriteRepository, IPlaylistReadRepository playlistReadRepository, IPlaylistWriteRepository playlistWriteRepository, IPlaylistMusicReadRepository playlistMusicReadRepository, IPlaylistMusicWriteRepository playlistMusicWriteRepository, IPlaylistUserReadRepository playlistUserReadRepository, IPlaylistUserWriteRepository playlistUserWriteRepository, IRadioReadRepository radioReadRepository, IRadioWriteRepository radioWriteRepository, IArtistAlbumReadRepository artistAlbumReadRepository, IArtistAlbumWriteRepository artistAlbumWriteRepository)
+        public MusicServiceManager(IConfiguration configuration, IMapper mapper, IArtistCacheService<ArtistDTOforGetandGetAll> artistCacheServiceGetandGetAll, IAlbumCacheService<AlbumDTOforGetandGetAll> albumCacheServiceGetandGetAll, IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll> artistAlbumCacheServiceGetandGetAll, IMusicCacheService<MusicDTOforGetandGetAll> musicCacheServiceGetandGetAll, IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> musicAlbumCacheServiceGetandGetAll, ILogger<MusicServiceManager> logger, IUserReadRepository userReadRepository, IArtistReadRepository artistReadRepository, IArtistWriteRepository artistWriteRepository, IAlbumReadRepository albumReadRepository, IAlbumWriteRepository albumWriteRepository, IMusicWriteRepository musicWriteRepository, IMusicReadRepository musicReadRepository, IMusicAlbumReadRepository musicAlbumReadRepository, IMusicAlbumWriteRepository musicAlbumWriteRepository, IPlaylistReadRepository playlistReadRepository, IPlaylistWriteRepository playlistWriteRepository, IPlaylistMusicReadRepository playlistMusicReadRepository, IPlaylistMusicWriteRepository playlistMusicWriteRepository, IPlaylistUserReadRepository playlistUserReadRepository, IPlaylistUserWriteRepository playlistUserWriteRepository, IRadioReadRepository radioReadRepository, IRadioWriteRepository radioWriteRepository, IArtistAlbumReadRepository artistAlbumReadRepository, IArtistAlbumWriteRepository artistAlbumWriteRepository)
         {
             _configuration = configuration;
             _mapper = mapper;
@@ -71,6 +74,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             _albumCacheServiceGetandGetAll = albumCacheServiceGetandGetAll;
             _artistAlbumCacheServiceGetandGetAll = artistAlbumCacheServiceGetandGetAll;
             _musicCacheServiceGetandGetAll = musicCacheServiceGetandGetAll;
+            _musicAlbumCacheServiceGetandGetAll = musicAlbumCacheServiceGetandGetAll;
             _logger = logger;
             _userReadRepository = userReadRepository;
             _artistReadRepository = artistReadRepository;
@@ -92,6 +96,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             _artistAlbumReadRepository = artistAlbumReadRepository;
             _artistAlbumWriteRepository = artistAlbumWriteRepository;
         }
+
 
 
 
@@ -1463,5 +1468,223 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
         }
 
         #endregion
+
+
+        #region MusicAlbum
+        public async Task CreateMusicAlbum(MusicAlbumDTOforCreate model, ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+                    var MusicAlbum = new MusicAlbum
+                    {
+                        Id = Guid.NewGuid(),
+                        MusicId_forMusicAlbum = model.MusicId_forMusicAlbum,
+                        AlbumId_forMusicAlbum = model.AlbumId_forMusicAlbum
+
+                    };
+
+
+                    var isMusic = _musicReadRepository
+                        .GetAll()
+                        .Any(x =>
+                            x.Id == model.MusicId_forMusicAlbum);
+
+
+                    var isAlbum = _albumReadRepository
+                        .GetAll()
+                        .Any(x =>
+                            x.Id == model.AlbumId_forMusicAlbum);
+
+
+
+
+                    if (isMusic == false || isAlbum == false)
+                    {
+                        throw new NotFoundException("You have entered an invalid Album ID or Music ID.");
+                    }
+
+                    await _musicAlbumWriteRepository.AddAsync(MusicAlbum);
+                    var musicAlbumResult = await _musicAlbumWriteRepository.SaveAsync();
+
+                    if (musicAlbumResult == -1)
+                    {
+                        await _musicAlbumCacheServiceGetandGetAll.ClearAllMusicAlbums();
+                        throw new InvalidOperationException("Failed to create the MusicAlbum.");
+
+                    }
+                    else
+                    {
+
+
+                        var MusicAlbums = _musicAlbumReadRepository.GetAll();
+
+                        var MusicAlbumDTOs = _mapper.Map<List<MusicAlbumDTOforGetandGetAll>>(MusicAlbums);
+
+
+                        await _musicAlbumCacheServiceGetandGetAll.SetAllMusicAlbums(MusicAlbumDTOs);
+                    }
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+        public async Task<List<MusicAlbumDTOforGetandGetAll>> GetAllMusicAlbum(ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+                    var cachedMusicAlbums = await _musicAlbumCacheServiceGetandGetAll.GetAllMusicAlbums();
+
+                    if (cachedMusicAlbums != null && cachedMusicAlbums.Count > 0)
+                    {
+
+                        return cachedMusicAlbums;
+                    }
+                    var MusicAlbums = _musicAlbumReadRepository.GetAll().ToList();
+
+
+
+
+                    var result = MusicAlbums.Select(x => new MusicAlbumDTOforGetandGetAll
+                    {
+                        Id = x.Id,
+                        //ArtistId_forMusicAlbum = x.ArtistId_forMusicAlbum,
+                        //AlbumId_forMusicAlbum = x.AlbumId_forMusicAlbum,
+
+                         Music = _musicReadRepository.GetAll().Where(a => a.Id == x.MusicId_forMusicAlbum).Select(a => new MusicDTOforGetandGetAll
+                        {
+                            Id = a.Id,
+                            MusicFile=a.MusicFile,
+                            ImageMusic=a.ImageMusic,
+                            isPopularMusic=a.isPopularMusic,
+                            MusicName=a.MusicName
+                        }).FirstOrDefault(),
+
+                        Album = _albumReadRepository.GetAll().Where(a => a.Id == x.AlbumId_forMusicAlbum).Select(a => new AlbumDTOforGetandGetAll
+                        {
+                            Id = a.Id,
+                            AlbumName = a.AlbumName,
+                            ImageAlbum = a.ImageAlbum
+                        }).FirstOrDefault()
+                    }).ToList();
+
+
+
+                    var MusicAlbumsDTO = _mapper.Map<List<MusicAlbumDTOforGetandGetAll>>(result);
+
+
+
+                    await _musicAlbumCacheServiceGetandGetAll.SetAllMusicAlbums(MusicAlbumsDTO);
+
+                    return MusicAlbumsDTO;
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+        public async Task<MusicAlbumDTOforGetandGetAll> GetByIdMusicAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var musicAlbum = await _musicAlbumReadRepository.GetByIdAsync(Id);
+
+                    if (musicAlbum == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid MusicAlbum ID.");
+                    }
+
+
+                    var music = _musicReadRepository.GetAll()
+                         .Where(a => a.Id == musicAlbum.MusicId_forMusicAlbum)
+                         .Select(a => new MusicDTOforGetandGetAll
+                         {
+                             Id = a.Id,
+                             MusicFile = a.MusicFile,
+                             ImageMusic = a.ImageMusic,
+                             isPopularMusic = a.isPopularMusic,
+                             MusicName = a.MusicName
+                         })
+                         .FirstOrDefault();
+
+                    var album = _albumReadRepository.GetAll()
+                        .Where(a => a.Id == musicAlbum.AlbumId_forMusicAlbum)
+                        .Select(a => new AlbumDTOforGetandGetAll
+                        {
+                            Id = a.Id,
+                            AlbumName = a.AlbumName,
+                            ImageAlbum = a.ImageAlbum
+                        })
+                        .FirstOrDefault();
+
+                    var result = new MusicAlbumDTOforGetandGetAll
+                    {
+                        Id = musicAlbum.Id,
+
+                        Music = music,
+                        Album = album
+                    };
+
+
+                    var MusicAlbumDTO = _mapper.Map<MusicAlbumDTOforGetandGetAll>(result);
+
+                    return MusicAlbumDTO;
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+        public Task UpdateMusicAlbum(MusicAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DeleteMusicAlbum(Guid Id, ClaimsPrincipal claimsPrincipal)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+
+
+
     }
 }
