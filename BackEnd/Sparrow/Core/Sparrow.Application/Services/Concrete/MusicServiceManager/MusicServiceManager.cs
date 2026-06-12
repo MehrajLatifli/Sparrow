@@ -2412,9 +2412,67 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             }
         }
 
-        public Task<PlaylistDTOforGetandGetAll> GetByIdPlaylist(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task<PlaylistDTOforGetandGetAll> GetByIdPlaylist(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+                    var user = _userReadRepository.GetAll().FirstOrDefault(x => x.Username == currentUser);
+
+
+                    var Playlists = _playlistReadRepository.GetAll();
+
+                    var result = (from pu in _playlistUserReadRepository.GetAll(false)
+                                  where pu.UserId_forPlaylistUser == user.Id
+
+                                  join p in _playlistReadRepository.GetAll(false)
+                                      on pu.PlaylistId_forPlaylistUser equals p.Id
+
+                                  select new PlaylistDTOforGetandGetAll
+                                  {
+                                      Id = p.Id,
+                                      PlaylistName = p.PlaylistName,
+                                      PlaylistDescription = p.PlaylistDescription,
+                                      PlaylistDatetime = p.PlaylistDatetime,
+                                      ImagePlaylist = p.ImagePlaylist,
+
+                                      Musics = (from pm in _playlistMusicReadRepository.GetAll(false)
+                                                join m in _musicReadRepository.GetAll(false)
+                                                    on pm.MusicId_forPlaylistMusic equals m.Id
+                                                where pm.PlaylistId_forPlaylistMusic == p.Id
+
+                                                select new MusicDTOforGetandGetAll
+                                                {
+                                                    MusicName = m.MusicName,
+                                                    ImageMusic = m.ImageMusic,
+                                                    MusicFile = m.MusicFile
+                                                }).ToList()
+                                  })
+                                    .ToList();
+
+                    var PlaylistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(result);
+
+                    var playlist = PlaylistDTOs.Where(p => p.Id == Id).FirstOrDefault();
+
+                    if (playlist == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid Playlist ID.");
+                    }
+
+                    return playlist;
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
         public Task UpdatePlaylist(PlaylistDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
