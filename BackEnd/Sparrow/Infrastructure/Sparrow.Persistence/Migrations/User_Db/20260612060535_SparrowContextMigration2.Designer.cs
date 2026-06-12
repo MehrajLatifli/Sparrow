@@ -12,7 +12,7 @@ using Sparrow.Persistence.Contexts.UserDbContext;
 namespace Sparrow.Persistence.Migrations.User_Db
 {
     [DbContext(typeof(User_DbContext))]
-    [Migration("20260604124958_SparrowContextMigration2")]
+    [Migration("20260612060535_SparrowContextMigration2")]
     partial class SparrowContextMigration2
     {
         /// <inheritdoc />

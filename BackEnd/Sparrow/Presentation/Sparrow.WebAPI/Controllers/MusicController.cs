@@ -54,7 +54,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.Artist)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_ArtistForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_ArtistForAdmin", "Get_ArtistForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadArtists()
         {
 
@@ -68,7 +68,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.ArtistById)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_ArtistByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_ArtistByIdForAdmin", "Get_ArtistByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadArtist(Guid id)
         {
 
@@ -128,7 +128,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.Album)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_AlbumForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_AlbumForAdmin", "Get_AlbumForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadAlbums()
         {
 
@@ -143,7 +143,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.AlbumById)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_AlbumByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_AlbumByIdForAdmin", "Get_AlbumByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadAlbum(Guid id)
         {
 
@@ -206,7 +206,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.ArtistAlbum)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_ArtistAlbumForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_ArtistAlbumForAdmin", "Get_ArtistAlbumForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadaArtistAlbums()
         {
 
@@ -221,7 +221,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.ArtistAlbumById)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_ArtistAlbumByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_ArtistAlbumByIdForAdmin", "Get_ArtistAlbumByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadArtistAlbum(Guid id)
         {
 
@@ -282,7 +282,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.Music)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_MusicForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicForAdmin", "Get_MusicForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadMusics()
         {
 
@@ -296,7 +296,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.MusicById)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_MusicByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicByIdForAdmin", "Get_MusicByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadMusic(Guid id)
         {
 
@@ -359,7 +359,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.MusicAlbum)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_MusicAlbumForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicAlbumForAdmin", "Get_MusicAlbumForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadaMusicAlbums()
         {
 
@@ -374,7 +374,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.MusicAlbumById)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Get_MusicAlbumByIdForAdmin" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin,UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicAlbumByIdForAdmin", "Get_MusicAlbumByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadMusicAlbum(Guid id)
         {
 

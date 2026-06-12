@@ -12,7 +12,7 @@ using Sparrow.Persistence.Contexts.MusicDbContext;
 namespace Sparrow.Persistence.Migrations
 {
     [DbContext(typeof(Music_DbContext))]
-    [Migration("20260604124905_SparrowContextMigration1")]
+    [Migration("20260612060449_SparrowContextMigration1")]
     partial class SparrowContextMigration1
     {
         /// <inheritdoc />

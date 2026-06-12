@@ -2090,26 +2090,11 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
         {
             return new List<RolePermissionDTOforGetandGetAll>
             {
-                new RolePermissionDTOforGetandGetAll {
-                   Id=Guid.NewGuid(),
-                   Method = "Get_NotificationsForAdmin",
-                   MethodDescription = "View Notifications",
-                   CreatedDate = localTime
-                },
-
-
 
                 new RolePermissionDTOforGetandGetAll {
                    Id=Guid.NewGuid(),
                    Method = "Get_ProfileForAdmin",
                    MethodDescription = "View Profile",
-                   CreatedDate = localTime
-                },
-
-                new RolePermissionDTOforGetandGetAll {
-                   Id=Guid.NewGuid(),
-                   Method = "Get_MesssagesForAdmin",
-                   MethodDescription = "View Messages",
                    CreatedDate = localTime
                 },
 
@@ -2492,6 +2477,9 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
                 },
 
                 #endregion
+
+
+
             };
         }
 
@@ -2537,8 +2525,119 @@ namespace Sparrow.Application.Services.Concrete.UserServiceManager
                    MethodDescription = "Add RefreshToken",
                    CreatedDate = localTime
                 },
+                
+                
+                #region Album
+
+   
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_AlbumForUser",
+                   MethodDescription = "View Album",
+                   CreatedDate = localTime
+                },
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_AlbumByIdForUser",
+                   MethodDescription = "View Album",
+                   CreatedDate = localTime
+                },
+
+                #endregion
 
 
+                #region Artist
+
+               
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_ArtistForUser",
+                   MethodDescription = "View Artist",
+                   CreatedDate = localTime
+                },
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_ArtistByIdForUser",
+                   MethodDescription = "View Artist",
+                   CreatedDate = localTime
+                },
+
+                #endregion
+
+
+                #region ArtistAlbum
+
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_ArtistAlbumForUser",
+                   MethodDescription = "View ArtistAlbum",
+                   CreatedDate = localTime
+                },
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_ArtistAlbumByIdForUser",
+                   MethodDescription = "View ArtistAlbum",
+                   CreatedDate = localTime
+                },
+
+                #endregion
+
+
+                #region Music
+
+             
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_MusicForUser",
+                   MethodDescription = "View Music",
+                   CreatedDate = localTime
+                },
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_MusicByIdForUser",
+                   MethodDescription = "View Music",
+                   CreatedDate = localTime
+                },
+
+                #endregion  
+                
+                
+                
+                #region  MusicAlbum
+
+                
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_MusicAlbumForUser",
+                   MethodDescription = "View MusicAlbum",
+                   CreatedDate = localTime
+                },
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_MusicAlbumByIdForUser",
+                   MethodDescription = "View MusicAlbum",
+                   CreatedDate = localTime
+                },
+
+                #endregion
+
+                 #region  Radio
+
+       
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_RadioForUser",
+                   MethodDescription = "View Radio",
+                   CreatedDate = localTime
+                },
+                new RolePermissionDTOforGetandGetAll {
+                      Id=Guid.NewGuid(),
+                   Method = "Get_RadioByIdForUser",
+                   MethodDescription = "View Radio",
+                   CreatedDate = localTime
+                },
+
+                #endregion
                 
                 #region  Playlist
 
