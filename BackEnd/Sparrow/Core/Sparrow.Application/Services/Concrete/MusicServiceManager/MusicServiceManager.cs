@@ -11,6 +11,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.UserDTO;
 using Sparrow.Application.Repositories.Custom.MusicRepositories;
@@ -43,6 +44,8 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
         private readonly IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> _musicAlbumCacheServiceGetandGetAll;
 
+        private readonly IRadioCacheService<RadioDTOforGetandGetAll> _radioCacheServiceGetandGetAll;
+
 
         private readonly ILogger<MusicServiceManager> _logger;
 
@@ -66,7 +69,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
         private readonly IArtistAlbumReadRepository _artistAlbumReadRepository;
         private readonly IArtistAlbumWriteRepository _artistAlbumWriteRepository;
 
-        public MusicServiceManager(IConfiguration configuration, IMapper mapper, IArtistCacheService<ArtistDTOforGetandGetAll> artistCacheServiceGetandGetAll, IAlbumCacheService<AlbumDTOforGetandGetAll> albumCacheServiceGetandGetAll, IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll> artistAlbumCacheServiceGetandGetAll, IMusicCacheService<MusicDTOforGetandGetAll> musicCacheServiceGetandGetAll, IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> musicAlbumCacheServiceGetandGetAll, ILogger<MusicServiceManager> logger, IUserReadRepository userReadRepository, IArtistReadRepository artistReadRepository, IArtistWriteRepository artistWriteRepository, IAlbumReadRepository albumReadRepository, IAlbumWriteRepository albumWriteRepository, IMusicWriteRepository musicWriteRepository, IMusicReadRepository musicReadRepository, IMusicAlbumReadRepository musicAlbumReadRepository, IMusicAlbumWriteRepository musicAlbumWriteRepository, IPlaylistReadRepository playlistReadRepository, IPlaylistWriteRepository playlistWriteRepository, IPlaylistMusicReadRepository playlistMusicReadRepository, IPlaylistMusicWriteRepository playlistMusicWriteRepository, IPlaylistUserReadRepository playlistUserReadRepository, IPlaylistUserWriteRepository playlistUserWriteRepository, IRadioReadRepository radioReadRepository, IRadioWriteRepository radioWriteRepository, IArtistAlbumReadRepository artistAlbumReadRepository, IArtistAlbumWriteRepository artistAlbumWriteRepository)
+        public MusicServiceManager(IConfiguration configuration, IMapper mapper, IArtistCacheService<ArtistDTOforGetandGetAll> artistCacheServiceGetandGetAll, IAlbumCacheService<AlbumDTOforGetandGetAll> albumCacheServiceGetandGetAll, IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll> artistAlbumCacheServiceGetandGetAll, IMusicCacheService<MusicDTOforGetandGetAll> musicCacheServiceGetandGetAll, IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> musicAlbumCacheServiceGetandGetAll, IRadioCacheService<RadioDTOforGetandGetAll> radioCacheServiceGetandGetAll, ILogger<MusicServiceManager> logger, IUserReadRepository userReadRepository, IArtistReadRepository artistReadRepository, IArtistWriteRepository artistWriteRepository, IAlbumReadRepository albumReadRepository, IAlbumWriteRepository albumWriteRepository, IMusicWriteRepository musicWriteRepository, IMusicReadRepository musicReadRepository, IMusicAlbumReadRepository musicAlbumReadRepository, IMusicAlbumWriteRepository musicAlbumWriteRepository, IPlaylistReadRepository playlistReadRepository, IPlaylistWriteRepository playlistWriteRepository, IPlaylistMusicReadRepository playlistMusicReadRepository, IPlaylistMusicWriteRepository playlistMusicWriteRepository, IPlaylistUserReadRepository playlistUserReadRepository, IPlaylistUserWriteRepository playlistUserWriteRepository, IRadioReadRepository radioReadRepository, IRadioWriteRepository radioWriteRepository, IArtistAlbumReadRepository artistAlbumReadRepository, IArtistAlbumWriteRepository artistAlbumWriteRepository)
         {
             _configuration = configuration;
             _mapper = mapper;
@@ -75,6 +78,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             _artistAlbumCacheServiceGetandGetAll = artistAlbumCacheServiceGetandGetAll;
             _musicCacheServiceGetandGetAll = musicCacheServiceGetandGetAll;
             _musicAlbumCacheServiceGetandGetAll = musicAlbumCacheServiceGetandGetAll;
+            _radioCacheServiceGetandGetAll = radioCacheServiceGetandGetAll;
             _logger = logger;
             _userReadRepository = userReadRepository;
             _artistReadRepository = artistReadRepository;
@@ -96,6 +100,8 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             _artistAlbumReadRepository = artistAlbumReadRepository;
             _artistAlbumWriteRepository = artistAlbumWriteRepository;
         }
+
+
 
 
 
@@ -1847,6 +1853,196 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             {
                 throw new UnauthorizedException("Current user is not authenticated.");
             }
+        }
+
+        #endregion
+
+
+        #region Radio
+
+        public async Task CreateRadio(RadioDTOforCreate model, ClaimsPrincipal claimsPrincipal, string ConnectionStringAzure)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+                    string connectionString = GetAzureConnectionString(ConnectionStringAzure);
+
+
+                    string containerName = "radio-images";
+                    string userFolder = $"{model.RadioName}/";
+                    string blobName = $"{userFolder}{model.RadioName}_{Guid.NewGuid()}{Path.GetExtension(model.ImageRadio.FileName)}";
+
+                    var blobHttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = GetContentType(Path.GetExtension(model.ImageRadio.FileName)),
+                        ContentDisposition = "inline"
+                    };
+
+                    var blobServiceClient = new BlobServiceClient(connectionString);
+                    var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                    await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+                    var blobClient = containerClient.GetBlobClient(blobName);
+                    using (var stream = model.ImageRadio.OpenReadStream())
+                    {
+                        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeaders });
+                    }
+
+                    string imageUrl = blobClient.Uri.ToString();
+
+
+
+
+     
+
+
+
+
+
+
+
+
+                    System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
+
+                    TimeZone localZone = TimeZone.CurrentTimeZone;
+                    DateTime localTime = localZone.ToLocalTime(DateTime.UtcNow);
+
+
+
+
+                    var radio = new Radio
+                    {
+                        Id = Guid.NewGuid(),
+                        RadioName = model.RadioName,
+                        ImageRadio = imageUrl,
+                        RadioFile = model.RadioFile,
+                        RadioDescription = model.RadioDescription,
+                        RadioCountry = model.RadioCountry,
+                        
+                    };
+
+
+
+
+                    await _radioWriteRepository.AddAsync(radio);
+                    var radioResult = await _radioWriteRepository.SaveAsync();
+
+                    if (radioResult == -1)
+                    {
+                        await _radioCacheServiceGetandGetAll.ClearAllRadios();
+                        throw new InvalidOperationException("Failed to create the Radio.");
+                    }
+                    else
+                    {
+
+
+                        var Radios = _radioReadRepository.GetAll();
+
+                        var RadioDTOs = _mapper.Map<List<RadioDTOforGetandGetAll>>(Radios);
+
+                        await _radioCacheServiceGetandGetAll.SetAllRadios(RadioDTOs);
+                    }
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+
+        public async Task<List<RadioDTOforGetandGetAll>> GetAllRadio(ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+
+
+
+                    var cachedRadios = await _radioCacheServiceGetandGetAll.GetAllRadios();
+
+                    if (cachedRadios != null && cachedRadios.Count > 0)
+                    {
+                        return cachedRadios;
+                    }
+
+
+                    var Radios = _radioReadRepository.GetAll();
+
+                    var RadioDTOs = _mapper.Map<List<RadioDTOforGetandGetAll>>(Radios);
+
+
+
+                    await _radioCacheServiceGetandGetAll.SetAllRadios(RadioDTOs);
+
+                    return RadioDTOs;
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+        public async Task<RadioDTOforGetandGetAll> GetByIdRadio(Guid Id, ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+                    var radio = await _radioReadRepository.GetByIdAsync(Id);
+
+                    if (radio == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid Radio ID.");
+                    }
+                    var RadioDTO = _mapper.Map<RadioDTOforGetandGetAll>(radio);
+
+                    return RadioDTO;
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            };
+        }
+
+        public Task UpdateRadio(RadioDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DeleteRadio(Guid Id, ClaimsPrincipal claimsPrincipal)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

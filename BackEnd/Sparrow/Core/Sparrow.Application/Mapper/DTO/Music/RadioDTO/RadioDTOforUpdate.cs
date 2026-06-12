@@ -1,4 +1,5 @@
-﻿using Sparrow.Application.Validations;
+﻿using Microsoft.AspNetCore.Http;
+using Sparrow.Application.Validations;
 using System.ComponentModel.DataAnnotations;
 
 namespace Sparrow.Application.Mapper.DTO.Music.RadioDTO
@@ -14,11 +15,10 @@ namespace Sparrow.Application.Mapper.DTO.Music.RadioDTO
         [Required(ErrorMessage = "ImageRadio is required")]
         [AllowedExtensions(new string[] { ".jpg", ".jpeg", ".png", ".gif" })]
         [FileSize(5, 10)]
-        public string ImageRadio { get; set; }
+        public IFormFile ImageRadio { get; set; }
 
         [Required(ErrorMessage = "RadioFile is required")]
-        [AllowedExtensions(new string[] { ".m3u" })]
-        [FileSize(5, 10)]
+        [HttpHttpsUrl]
         public string RadioFile { get; set; }
 
         [Required(ErrorMessage = "RadioDescription is required")]

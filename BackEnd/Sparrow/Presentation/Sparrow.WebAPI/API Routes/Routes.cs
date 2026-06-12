@@ -59,5 +59,15 @@
         public const string UpdateMusicAlbum = MusicAlbum;
         public const string DeleteMusicAlbum = MusicAlbum + "/{id:guid}";
         #endregion
+
+
+        #region Radio
+
+        public const string Radio = "radio";
+        public const string RadioById = Radio + "/{id:guid}";
+        public const string UpdateRadio = Radio;
+        public const string DeleteRadio = Radio + "/{id:guid}";
+        #endregion
+    
     }
 }

@@ -3,6 +3,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -45,6 +46,15 @@ namespace Sparrow.Application.Services.Abstract.MusicServices
         public Task<MusicAlbumDTOforGetandGetAll> GetByIdMusicAlbum(Guid Id, ClaimsPrincipal claimsPrincipal);
         public Task UpdateMusicAlbum(MusicAlbumDTOforUpdate model, ClaimsPrincipal claimsPrincipal);
         public Task DeleteMusicAlbum(Guid Id, ClaimsPrincipal claimsPrincipal);
+
+
+        public Task CreateRadio(RadioDTOforCreate model, ClaimsPrincipal claimsPrincipal, string ConnectionStringAzure);
+        public Task<List<RadioDTOforGetandGetAll>> GetAllRadio(ClaimsPrincipal claimsPrincipal);
+        public Task<RadioDTOforGetandGetAll> GetByIdRadio(Guid Id, ClaimsPrincipal claimsPrincipal);
+        public Task UpdateRadio(RadioDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure);
+        public Task DeleteRadio(Guid Id, ClaimsPrincipal claimsPrincipal);
+
+
 
     }
 }

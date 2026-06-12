@@ -4,23 +4,23 @@ using StackExchange.Redis;
 
 namespace Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music
 {
-    public class MusicCacheService<T> : IMusicCacheService<T>
+    public class RadioCacheService<T> : IRadioCacheService<T>
     {
         private readonly IDatabase _database;
 
-        private const string CacheKey = "Music:All";
+        private const string CacheKey = "Radio:All";
         private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-        public MusicCacheService(IConnectionMultiplexer connectionMultiplexer)
+        public RadioCacheService(IConnectionMultiplexer connectionMultiplexer)
         {
             _database = connectionMultiplexer?.GetDatabase()
                 ?? throw new ArgumentNullException(nameof(connectionMultiplexer));
         }
 
 
-        public async Task<List<T>> GetAllMusics()
+        public async Task<List<T>> GetAllRadios()
         {
             await _semaphore.WaitAsync();
             try
@@ -39,7 +39,7 @@ namespace Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music
         }
 
 
-        public async Task SetAllMusics(List<T> items)
+        public async Task SetAllRadios(List<T> items)
         {
             await _semaphore.WaitAsync();
             try
@@ -59,7 +59,7 @@ namespace Sparrow.Application.Cache.RedisCachePatterns.Concrete.Music
         }
 
 
-        public async Task ClearAllMusics()
+        public async Task ClearAllRadios()
         {
             await _database.KeyDeleteAsync(CacheKey);
         }

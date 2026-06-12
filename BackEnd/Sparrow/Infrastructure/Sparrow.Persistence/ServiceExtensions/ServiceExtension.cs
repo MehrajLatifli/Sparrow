@@ -23,6 +23,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.UserDTO;
 using Sparrow.Application.Repositories.Custom.MusicRepositories;
@@ -202,6 +203,10 @@ namespace Sparrow.Persistence.ServiceExtensions
 
 
             services.AddScoped<IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll>, MusicAlbumCacheService<MusicAlbumDTOforGetandGetAll>>();
+
+
+            services.AddScoped<IRadioCacheService<RadioDTOforGetandGetAll>, RadioCacheService<RadioDTOforGetandGetAll>>();
+
 
 
         }

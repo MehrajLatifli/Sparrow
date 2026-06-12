@@ -7,6 +7,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Services.Abstract.MusicServices;
 using Sparrow.Application.Services.Abstract.UserServices;
@@ -374,7 +375,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.MusicAlbumById)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin,UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicAlbumByIdForAdmin", "Get_MusicAlbumByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin,UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicAlbumByIdForAdmin","Get_MusicAlbumByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
         public async Task<IActionResult> ReadMusicAlbum(Guid id)
         {
 
@@ -414,5 +415,50 @@ namespace Sparrow.WebAPI.Controllers
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
 
         }
+
+
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.Radio)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Post_RadioForAdmin" }, CustomUserPermissions = new[] { "Create" })]
+        public async Task<IActionResult> CreateRadio([FromForm] RadioDTOforCreate model)
+        {
+
+            await _musicService.CreateRadio(model, User, ServiceExtension.ConnectionStringAzure);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.RadioName} created successfully!" });
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.Radio)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_RadioForAdmin", "Get_RadioForUser" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadRadios()
+        {
+
+            var alllRadios = await _musicService.GetAllRadio(User);
+
+
+            return Ok(alllRadios);
+        }
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.RadioById)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_RadioByIdForAdmin", "Get_RadioByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadRadio(Guid id)
+        {
+
+            var allRadios = await _musicService.GetByIdRadio(id, User);
+
+
+            return Ok(allRadios);
+        }
+
     }
 }
