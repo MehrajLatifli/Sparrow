@@ -68,6 +68,15 @@
         public const string UpdateRadio = Radio;
         public const string DeleteRadio = Radio + "/{id:guid}";
         #endregion
-    
+
+
+        #region Playlist
+
+        public const string Playlist = "playlist";
+        public const string PlaylistById = Playlist + "/{id:guid}";
+        public const string UpdatePlaylist = Playlist;
+        public const string DeletePlaylist = Playlist + "/{id:guid}";
+        #endregion
+
     }
 }

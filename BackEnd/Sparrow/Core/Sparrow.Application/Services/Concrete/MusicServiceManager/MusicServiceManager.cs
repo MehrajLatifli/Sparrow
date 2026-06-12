@@ -11,6 +11,8 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistUserDTO;
 using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.UserDTO;
@@ -46,6 +48,10 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
         private readonly IRadioCacheService<RadioDTOforGetandGetAll> _radioCacheServiceGetandGetAll;
 
+        private readonly IPlaylistCacheService<PlaylistDTOforGetandGetAll> _playlistCacheServiceGetandGetAll;
+
+        private readonly IPlaylistUserCacheService<PlaylistUserDTOforGetandGetAll> _playlistUserCacheServiceGetandGetAll;
+
 
         private readonly ILogger<MusicServiceManager> _logger;
 
@@ -69,7 +75,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
         private readonly IArtistAlbumReadRepository _artistAlbumReadRepository;
         private readonly IArtistAlbumWriteRepository _artistAlbumWriteRepository;
 
-        public MusicServiceManager(IConfiguration configuration, IMapper mapper, IArtistCacheService<ArtistDTOforGetandGetAll> artistCacheServiceGetandGetAll, IAlbumCacheService<AlbumDTOforGetandGetAll> albumCacheServiceGetandGetAll, IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll> artistAlbumCacheServiceGetandGetAll, IMusicCacheService<MusicDTOforGetandGetAll> musicCacheServiceGetandGetAll, IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> musicAlbumCacheServiceGetandGetAll, IRadioCacheService<RadioDTOforGetandGetAll> radioCacheServiceGetandGetAll, ILogger<MusicServiceManager> logger, IUserReadRepository userReadRepository, IArtistReadRepository artistReadRepository, IArtistWriteRepository artistWriteRepository, IAlbumReadRepository albumReadRepository, IAlbumWriteRepository albumWriteRepository, IMusicWriteRepository musicWriteRepository, IMusicReadRepository musicReadRepository, IMusicAlbumReadRepository musicAlbumReadRepository, IMusicAlbumWriteRepository musicAlbumWriteRepository, IPlaylistReadRepository playlistReadRepository, IPlaylistWriteRepository playlistWriteRepository, IPlaylistMusicReadRepository playlistMusicReadRepository, IPlaylistMusicWriteRepository playlistMusicWriteRepository, IPlaylistUserReadRepository playlistUserReadRepository, IPlaylistUserWriteRepository playlistUserWriteRepository, IRadioReadRepository radioReadRepository, IRadioWriteRepository radioWriteRepository, IArtistAlbumReadRepository artistAlbumReadRepository, IArtistAlbumWriteRepository artistAlbumWriteRepository)
+        public MusicServiceManager(IConfiguration configuration, IMapper mapper, IArtistCacheService<ArtistDTOforGetandGetAll> artistCacheServiceGetandGetAll, IAlbumCacheService<AlbumDTOforGetandGetAll> albumCacheServiceGetandGetAll, IArtistAlbumCacheService<ArtistAlbumDTOforGetandGetAll> artistAlbumCacheServiceGetandGetAll, IMusicCacheService<MusicDTOforGetandGetAll> musicCacheServiceGetandGetAll, IMusicAlbumCacheService<MusicAlbumDTOforGetandGetAll> musicAlbumCacheServiceGetandGetAll, IRadioCacheService<RadioDTOforGetandGetAll> radioCacheServiceGetandGetAll, ILogger<MusicServiceManager> logger, IUserReadRepository userReadRepository, IArtistReadRepository artistReadRepository, IArtistWriteRepository artistWriteRepository, IAlbumReadRepository albumReadRepository, IAlbumWriteRepository albumWriteRepository, IMusicWriteRepository musicWriteRepository, IMusicReadRepository musicReadRepository, IMusicAlbumReadRepository musicAlbumReadRepository, IMusicAlbumWriteRepository musicAlbumWriteRepository, IPlaylistReadRepository playlistReadRepository, IPlaylistWriteRepository playlistWriteRepository, IPlaylistMusicReadRepository playlistMusicReadRepository, IPlaylistMusicWriteRepository playlistMusicWriteRepository, IPlaylistUserReadRepository playlistUserReadRepository, IPlaylistUserWriteRepository playlistUserWriteRepository, IRadioReadRepository radioReadRepository, IRadioWriteRepository radioWriteRepository, IArtistAlbumReadRepository artistAlbumReadRepository, IArtistAlbumWriteRepository artistAlbumWriteRepository, IPlaylistCacheService<PlaylistDTOforGetandGetAll> playlistCacheServiceGetandGetAll, IPlaylistUserCacheService<PlaylistUserDTOforGetandGetAll> playlistUserCacheServiceGetandGetAll)
         {
             _configuration = configuration;
             _mapper = mapper;
@@ -99,6 +105,8 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             _radioWriteRepository = radioWriteRepository;
             _artistAlbumReadRepository = artistAlbumReadRepository;
             _artistAlbumWriteRepository = artistAlbumWriteRepository;
+            _playlistCacheServiceGetandGetAll = playlistCacheServiceGetandGetAll;
+            _playlistUserCacheServiceGetandGetAll = playlistUserCacheServiceGetandGetAll;
         }
 
 
@@ -1477,6 +1485,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
 
         #region MusicAlbum
+
         public async Task CreateMusicAlbum(MusicAlbumDTOforCreate model, ClaimsPrincipal claimsPrincipal)
         {
             if (claimsPrincipal.Identity.IsAuthenticated)
@@ -2178,6 +2187,244 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             {
                 throw new UnauthorizedException("Current user is not authenticated.");
             }
+        }
+
+        #endregion
+
+
+        #region Playlist
+
+        public async Task CreatePlaylist(PlaylistDTOforCreate model, ClaimsPrincipal claimsPrincipal, string ConnectionStringAzure)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+                    string connectionString = GetAzureConnectionString(ConnectionStringAzure);
+
+
+                    string containerName = "playlist-images";
+                    string userFolder = $"{model.PlaylistName}/";
+                    string blobName = $"{userFolder}{model.PlaylistName}_{Guid.NewGuid()}{Path.GetExtension(model.ImagePlaylist.FileName)}";
+
+                    var blobHttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = GetContentType(Path.GetExtension(model.ImagePlaylist.FileName)),
+                        ContentDisposition = "inline"
+                    };
+
+                    var blobServiceClient = new BlobServiceClient(connectionString);
+                    var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                    await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+                    var blobClient = containerClient.GetBlobClient(blobName);
+                    using (var stream = model.ImagePlaylist.OpenReadStream())
+                    {
+                        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeaders });
+                    }
+
+                    string imageUrl = blobClient.Uri.ToString();
+
+
+
+
+                    System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
+
+                    TimeZone localZone = TimeZone.CurrentTimeZone;
+                    DateTime localTime = localZone.ToLocalTime(DateTime.UtcNow);
+
+
+
+
+                    var Playlist = new Playlist
+                    {
+                        Id = Guid.NewGuid(),
+                        PlaylistName = model.PlaylistName,
+                        ImagePlaylist = imageUrl,
+                        PlaylistDescription = model.PlaylistDescription,
+                        PlaylistDatetime = localTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                       
+                    };
+
+
+                    var playlistUser = new PlaylistUser
+                    {
+                        Id = Guid.NewGuid(),
+                        PlaylistId_forPlaylistUser = Playlist.Id,
+                        UserId_forPlaylistUser = _userReadRepository.GetAll().FirstOrDefault(x => x.Username == currentUser).Id
+                    };
+
+
+
+                    await _playlistWriteRepository.AddAsync(Playlist);
+                    var PlaylistResult = await _playlistWriteRepository.SaveAsync();
+
+                    if (PlaylistResult == -1)
+                    {
+                        await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
+                        throw new InvalidOperationException("Failed to create the Playlist.");
+                    }
+                    else
+                    {
+
+
+                        var playlists = _playlistReadRepository
+                                            .GetAll(false)
+                                            .ToList();
+
+                        var playlistDTOs =
+                            _mapper.Map<List<PlaylistDTOforGetandGetAll>>(playlists);
+
+                        await _playlistCacheServiceGetandGetAll.SetAllPlaylists(playlistDTOs);
+                    }
+
+                    await _playlistUserWriteRepository.AddAsync(playlistUser);
+                    var playlistUserResult = await _playlistUserWriteRepository.SaveAsync();
+
+                    if (playlistUserResult == -1)
+                    {
+                        await _playlistUserCacheServiceGetandGetAll.ClearAllPlaylisUsers();
+                        throw new InvalidOperationException("Failed to create the PlaylistUser.");
+                    }
+                    else
+                    {
+                        var usersDict = _userReadRepository.GetAll().ToDictionary(x => x.Id);
+
+                        var playlistsDict = _playlistReadRepository.GetAll()
+                            .ToDictionary(x => x.Id);
+
+                        var playlistUsers = _playlistUserReadRepository.GetAll().ToList();
+
+                        var result = playlistUsers.Select(x => new PlaylistUserDTOforGetandGetAll
+                        {
+                            Id = x.Id,
+
+                            User = usersDict.ContainsKey(x.UserId_forPlaylistUser)
+                                ? new UserDTOforGetandGetAll
+                                {
+                                    Id = usersDict[x.UserId_forPlaylistUser].Id,
+                                    Username = usersDict[x.UserId_forPlaylistUser].Username,
+                                    Name = usersDict[x.UserId_forPlaylistUser].Name,
+                                    Email = usersDict[x.UserId_forPlaylistUser].Email
+                                }
+                                : null,
+
+                            Playlist = playlistsDict.ContainsKey(x.PlaylistId_forPlaylistUser)
+                                ? new PlaylistDTOforGetandGetAll
+                                {
+                                    Id = playlistsDict[x.PlaylistId_forPlaylistUser].Id,
+                                    PlaylistName = playlistsDict[x.PlaylistId_forPlaylistUser].PlaylistName,
+                                    ImagePlaylist = playlistsDict[x.PlaylistId_forPlaylistUser].ImagePlaylist,
+                                    PlaylistDescription = playlistsDict[x.PlaylistId_forPlaylistUser].PlaylistDescription,
+                                    PlaylistDatetime = playlistsDict[x.PlaylistId_forPlaylistUser].PlaylistDatetime
+                                }
+                                : null
+                        }).ToList();
+
+                        var PlaylistUseDTOs = _mapper.Map<List<PlaylistUserDTOforGetandGetAll>>(result).OrderBy(x=>x.Playlist.PlaylistDatetime).ToList();
+
+                        await _playlistUserCacheServiceGetandGetAll.SetAllPlaylisUsers(PlaylistUseDTOs);
+                    }
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+        public async Task<List<PlaylistDTOforGetandGetAll>> GetAllPlaylist(ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+                    var user = _userReadRepository.GetAll().FirstOrDefault(x => x.Username == currentUser);
+
+
+
+
+                    var cachedPlaylists = await _playlistCacheServiceGetandGetAll.GetAllPlaylists();
+
+                    if (cachedPlaylists != null && cachedPlaylists.Count > 0)
+                    {
+                        return cachedPlaylists;
+                    }
+
+
+                    var Playlists = _playlistReadRepository.GetAll();
+
+                    var result = (from pu in _playlistUserReadRepository.GetAll(false)
+                                     where pu.UserId_forPlaylistUser == user.Id
+
+                                     join p in _playlistReadRepository.GetAll(false)
+                                         on pu.PlaylistId_forPlaylistUser equals p.Id
+
+                                     select new PlaylistDTOforGetandGetAll
+                                     {
+                                         Id = p.Id,
+                                         PlaylistName = p.PlaylistName,
+                                         PlaylistDescription = p.PlaylistDescription,
+                                         PlaylistDatetime = p.PlaylistDatetime,
+                                         ImagePlaylist = p.ImagePlaylist,
+
+                                         Musics = (from pm in _playlistMusicReadRepository.GetAll(false)
+                                                   join m in _musicReadRepository.GetAll(false)
+                                                       on pm.MusicId_forPlaylistMusic equals m.Id
+                                                   where pm.PlaylistId_forPlaylistMusic == p.Id
+
+                                                   select new MusicDTOforGetandGetAll
+                                                   {
+                                                       MusicName = m.MusicName,
+                                                       ImageMusic = m.ImageMusic,
+                                                       MusicFile = m.MusicFile
+                                                   }).ToList()
+                                     })
+                                    .ToList();
+
+                    var PlaylistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(result);
+
+
+
+                    await _playlistCacheServiceGetandGetAll.SetAllPlaylists(PlaylistDTOs);
+
+                    return PlaylistDTOs;
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
+        }
+
+        public Task<PlaylistDTOforGetandGetAll> GetByIdPlaylist(Guid Id, ClaimsPrincipal claimsPrincipal)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task UpdatePlaylist(PlaylistDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DeletePlaylist(Guid Id, ClaimsPrincipal claimsPrincipal)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

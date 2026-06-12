@@ -7,6 +7,7 @@ using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
 using Sparrow.Application.Mapper.DTO.Music.PlaylistDTO;
 using Sparrow.Application.Mapper.DTO.Music.PlaylistMusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistUserDTO;
 using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Mapper.DTO.User.RoleClaimDTO;
@@ -165,12 +166,12 @@ namespace Sparrow.Application.Mapper
             CreateMap<PlaylistMusic, PlaylistMusicDTOforGetandGetAll>();
             CreateMap<PlaylistMusicDTOforGetandGetAll, PlaylistMusic>();
 
-            CreateMap<PlaylistMusicDTOforCreate, PlaylistMusic>();
-            CreateMap<PlaylistMusic, PlaylistMusicDTOforCreate>();
-            CreateMap<PlaylistMusicDTOforUpdate, PlaylistMusic>();
-            CreateMap<PlaylistMusic, PlaylistMusicDTOforUpdate>();
-            CreateMap<PlaylistMusicDTOforGetandGetAll, PlaylistMusic>();
-            CreateMap<PlaylistMusic, PlaylistMusicDTOforGetandGetAll>();
+            CreateMap<PlaylistUserDTOforCreate, PlaylistUser>();
+            CreateMap<PlaylistUser, PlaylistUserDTOforCreate>();
+            CreateMap<PlaylistUserDTOforUpdate, PlaylistUser>();
+            CreateMap<PlaylistUser, PlaylistUserDTOforUpdate>();
+            CreateMap<PlaylistUserDTOforGetandGetAll, PlaylistUser>();
+            CreateMap<PlaylistUser, PlaylistUserDTOforGetandGetAll>();
 
             CreateMap<Radio, RadioDTOforCreate>();
             CreateMap<RadioDTOforCreate, Radio>();

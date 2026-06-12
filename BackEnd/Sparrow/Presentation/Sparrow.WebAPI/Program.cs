@@ -80,8 +80,6 @@ namespace Sparrow.WebAPI
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperProfile>());
-
-
             builder.Services.AddRedisConfiguration(builder.Configuration);
 
 

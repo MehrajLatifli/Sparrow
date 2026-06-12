@@ -7,6 +7,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistDTO;
 using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Services.Abstract.MusicServices;
@@ -488,6 +489,36 @@ namespace Sparrow.WebAPI.Controllers
 
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
 
+        }
+
+
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.Playlist)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Post_PlaylistForAdmin", "Post_PlaylistForUser" }, CustomUserPermissions = new[] { "Create" })]
+        public async Task<IActionResult> CreatePlaylist([FromForm] PlaylistDTOforCreate model)
+        {
+
+            await _musicService.CreatePlaylist(model, User, ServiceExtension.ConnectionStringAzure);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.PlaylistName} created successfully!" });
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.Playlist)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_PlaylistForAdmin", "Get_PlaylistForUser" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadPlaylists()
+        {
+
+            var alllPlaylists = await _musicService.GetAllPlaylist(User);
+
+
+            return Ok(alllPlaylists);
         }
     }
 }
