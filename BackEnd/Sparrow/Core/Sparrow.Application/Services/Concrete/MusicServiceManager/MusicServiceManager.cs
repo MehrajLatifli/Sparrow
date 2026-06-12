@@ -2035,14 +2035,149 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             };
         }
 
-        public Task UpdateRadio(RadioDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
+        public async Task UpdateRadio(RadioDTOforUpdate model, ClaimsPrincipal claimsPrincipal, string connectionStringAzure)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+                    string connectionString = GetAzureConnectionString(connectionStringAzure);
+
+
+                    string containerName = "radio-images";
+                    string userFolder = $"{model.RadioName}/";
+                    string blobName = $"{userFolder}{model.RadioName}_{Guid.NewGuid()}{Path.GetExtension(model.ImageRadio.FileName)}";
+
+                    var blobHttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = GetContentType(Path.GetExtension(model.ImageRadio.FileName)),
+                        ContentDisposition = "inline"
+                    };
+
+                    var blobServiceClient = new BlobServiceClient(connectionString);
+                    var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                    await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+                    var blobClient = containerClient.GetBlobClient(blobName);
+                    using (var stream = model.ImageRadio.OpenReadStream())
+                    {
+                        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeaders });
+                    }
+
+                    string imageUrl = blobClient.Uri.ToString();
+
+
+
+
+    
+
+
+                    System.Globalization.CultureInfo.CurrentCulture.ClearCachedData();
+
+                    TimeZone localZone = TimeZone.CurrentTimeZone;
+                    DateTime localTime = localZone.ToLocalTime(DateTime.UtcNow);
+
+
+
+                    var radio = await _radioReadRepository.GetByIdAsync(model.Id);
+
+                    if (radio == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid Radio ID.");
+                    }
+
+                    radio.Id = model.Id;
+                    radio.RadioName = model.RadioName;
+                    radio.ImageRadio = imageUrl;
+                    radio.RadioFile = model.RadioFile;
+                   radio.RadioDescription = model.RadioDescription;
+                    radio.RadioCountry = model.RadioCountry;
+                   
+
+
+                    _radioWriteRepository.Update(radio);
+                    var radioResult = await _radioWriteRepository.SaveAsync();
+
+                    if (radioResult == -1)
+                    {
+                        await _radioCacheServiceGetandGetAll.ClearAllRadios();
+                        throw new InvalidOperationException("Failed to create the Radio.");
+
+                    }
+                    else
+                    {
+
+
+                        var Radios = _radioReadRepository.GetAll();
+
+                        var RadioDTOs = _mapper.Map<List<RadioDTOforGetandGetAll>>(Radios);
+
+                        await _radioCacheServiceGetandGetAll.SetAllRadios(RadioDTOs);
+                    }
+
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
-        public Task DeleteRadio(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task DeleteRadio(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var radio = await _radioReadRepository.GetByIdAsync(Id);
+
+                    if (radio == null)
+                    {
+                        throw new NotFoundException("You have entered an invalid Radio ID.");
+                    }
+
+
+
+                    _radioWriteRepository.Remove(radio);
+                    var RadioResult = await _radioWriteRepository.SaveAsync();
+
+                    if (RadioResult == -1)
+                    {
+                        await _radioCacheServiceGetandGetAll.ClearAllRadios();
+                        throw new InvalidOperationException("Failed to delete the Radio.");
+
+                    }
+                    else
+                    {
+
+
+                        var radios = _radioReadRepository.GetAll();
+
+                        var radioDTOs = _mapper.Map<List<RadioDTOforGetandGetAll>>(radios);
+
+                        await _radioCacheServiceGetandGetAll.SetAllRadios(radioDTOs);
+                    }
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
         #endregion

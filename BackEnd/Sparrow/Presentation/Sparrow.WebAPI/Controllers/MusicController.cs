@@ -460,5 +460,34 @@ namespace Sparrow.WebAPI.Controllers
             return Ok(allRadios);
         }
 
+        [HttpPut]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.UpdateRadio)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Put_RadioForAdmin" }, CustomUserPermissions = new[] { "Update" })]
+        public async Task<IActionResult> UpdateRadio([FromForm] RadioDTOforUpdate model)
+        {
+
+            await _musicService.UpdateRadio(model, User, ServiceExtension.ConnectionStringAzure);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.RadioName} updated successfully!" });
+
+        }
+
+        [HttpDelete]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.DeleteRadio)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Delete_RadioForAdmin" }, CustomUserPermissions = new[] { "Delete" })]
+        public async Task<IActionResult> DeleteRadio(Guid id)
+        {
+
+            await _musicService.DeleteRadio(id, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
+
+        }
     }
 }
