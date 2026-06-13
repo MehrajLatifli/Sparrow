@@ -535,5 +535,37 @@ namespace Sparrow.WebAPI.Controllers
 
             return Ok(allPlaylists);
         }
+
+
+        [HttpPut]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.UpdatePlaylist)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Put_PlaylistForAdmin" }, CustomUserPermissions = new[] { "Update" })]
+        public async Task<IActionResult> UpdatePlaylist([FromForm] PlaylistDTOforUpdate model)
+        {
+
+            await _musicService.UpdatePlaylist(model, User, ServiceExtension.ConnectionStringAzure);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{model.PlaylistName} updated successfully!" });
+
+        }
+
+
+        [HttpDelete]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.DeletePlaylist)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Delete_PlaylistForAdmin" }, CustomUserPermissions = new[] { "Delete" })]
+        public async Task<IActionResult> DeletePlaylist(Guid id)
+        {
+
+            await _musicService.DeletePlaylist(id, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
+
+        }
     }
 }

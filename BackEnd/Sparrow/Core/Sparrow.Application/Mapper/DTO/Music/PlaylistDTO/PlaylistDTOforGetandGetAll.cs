@@ -18,7 +18,7 @@ namespace Sparrow.Application.Mapper.DTO.Music.PlaylistDTO
 
         public string ImagePlaylist { get; set; }
 
-        public List<MusicDTOforGetandGetAll> Musics { get; set; }
+        //public List<MusicDTOforGetandGetAll> Musics { get; set; }
 
     }
 }
