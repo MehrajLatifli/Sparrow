@@ -8,6 +8,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
 using Sparrow.Application.Mapper.DTO.Music.PlaylistDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistMusicDTO;
 using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using Sparrow.Application.Mapper.DTO.User.AuthDTO;
 using Sparrow.Application.Services.Abstract.MusicServices;
@@ -362,7 +363,7 @@ namespace Sparrow.WebAPI.Controllers
         [Route(Routes.MusicAlbum)]
         [Produces("application/json")]
         [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_MusicAlbumForAdmin", "Get_MusicAlbumForUser" }, CustomUserPermissions = new[] { "Read" })]
-        public async Task<IActionResult> ReadaMusicAlbums()
+        public async Task<IActionResult> ReadMusicAlbums()
         {
 
             var musicAlbums = await _musicService.GetAllMusicAlbum(User);
@@ -566,6 +567,36 @@ namespace Sparrow.WebAPI.Controllers
 
             return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"{id} deleted successfully!" });
 
+        }
+
+
+        [HttpPost]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.PlaylistMusic)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Post_PlaylistMusicForAdmin", "Post_PlaylistMusicForUser"}, CustomUserPermissions = new[] { "Create" })]
+        public async Task<IActionResult> CreatePlaylistMusic([FromForm] PlaylistMusicDTOforCreate model)
+        {
+
+            await _musicService.CreatePlaylistMusic(model, User);
+
+
+            return Ok(new Application.Mapper.DTO.User.AuthDTO.Response { Status = "Success", Message = $"PlaylistMusic created successfully!" });
+        }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.PlaylistMusic)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_PlaylistMusicForAdmin", "Get_PlaylistMusicForUser" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadPlaylistMusics()
+        {
+
+            var PlaylistMusics = await _musicService.GetAllPlaylistMusic(User);
+
+
+            return Ok(PlaylistMusics);
         }
     }
 }

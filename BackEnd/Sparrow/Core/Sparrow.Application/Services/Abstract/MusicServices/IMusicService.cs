@@ -4,6 +4,7 @@ using Sparrow.Application.Mapper.DTO.Music.ArtistDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicAlbumDTO;
 using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
 using Sparrow.Application.Mapper.DTO.Music.PlaylistDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistMusicDTO;
 using Sparrow.Application.Mapper.DTO.Music.RadioDTO;
 using System;
 using System.Collections.Generic;
@@ -63,6 +64,12 @@ namespace Sparrow.Application.Services.Abstract.MusicServices
         public Task DeletePlaylist(Guid Id, ClaimsPrincipal claimsPrincipal);
 
 
+
+        public Task CreatePlaylistMusic(PlaylistMusicDTOforCreate model, ClaimsPrincipal claimsPrincipal);
+        public Task<List<PlaylistMusicDTOforGetandGetAll>> GetAllPlaylistMusic(ClaimsPrincipal claimsPrincipal);
+        public Task<PlaylistMusicDTOforGetandGetAll> GetByIdPlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal);
+        public Task UpdatePlaylistMusic(PlaylistMusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal);
+        public Task DeletePlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal);
 
     }
 }
