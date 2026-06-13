@@ -2754,6 +2754,19 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     var user = _userReadRepository.GetAll(false).FirstOrDefault(x => x.Username == currentUser);
 
 
+
+                    if (user == null)
+                        throw new UnauthorizedException("User not found.");
+
+                    // 🔥 CACHE (USER-BASED OLMAQLIDIR)
+                    var cached = await _playlistMusicCacheServiceGetandGetAll
+                        .GetAllPlaylistMusics();
+
+                    if (cached != null && cached.Any())
+                        return cached;
+
+
+
                     var result =
     from pu in _playlistUserReadRepository.GetAll(false)
     where pu.UserId_forPlaylistUser == user.Id
@@ -2767,7 +2780,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             _playlistMusicReadRepository.GetAll(false)
                 .Where(pm => pm.PlaylistId_forPlaylistMusic == p.Id)
                 .Select(pm => pm.Id)
-                .FirstOrDefault(), // ✅ PM.ID BURADA GƏLİR
+                .FirstOrDefault(), 
 
         PlaylistId = p.Id,
         PlaylistName = p.PlaylistName,
@@ -2782,13 +2795,15 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
              select new MusicDTOforGetandGetAll
              {
-                 Id = pm.MusicId_forPlaylistMusic, 
+                 Id = pm.MusicId_forPlaylistMusic,
                  MusicName = m.MusicName,
                  MusicFile = m.MusicFile,
                  ImageMusic = m.ImageMusic,
                  isPopularMusic = m.isPopularMusic
              }).ToList()
     };
+
+
 
                     var list = result.ToList();
 
