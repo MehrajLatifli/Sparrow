@@ -2947,21 +2947,225 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             }
         }
 
-        
-
-        public Task UpdatePlaylistMusic(PlaylistMusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
+        public async Task UpdatePlaylistMusic(PlaylistMusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+
+
+                    var user = _userReadRepository
+                        .GetAll(false)
+                        .FirstOrDefault(x => x.Username == currentUser);
+
+                    if (user == null)
+                        throw new UnauthorizedException("User not found.");
+
+                    // 🔒 CHECK OWNERSHIP (user bu PlaylistMusic-ə sahibdirmi?)
+                    var playlistMusic = (
+                        from pu in _playlistUserReadRepository.GetAll(false)
+
+                        join pm in _playlistMusicReadRepository.GetAll(false)
+                            on pu.PlaylistId_forPlaylistUser equals pm.PlaylistId_forPlaylistMusic
+
+                        where pu.UserId_forPlaylistUser == user.Id
+                              && pm.Id == model.Id
+
+                        select pm
+                    ).FirstOrDefault();
+
+                    if (playlistMusic == null)
+                        throw new UnauthorizedException("You do not have permission to update this PlaylistMusic.");
+
+                    // 🎯 VALIDATE MUSIC EXISTS
+                    var musicExists = _musicReadRepository
+                        .GetAll(false)
+                        .Any(x => x.Id == model.MusicId_forPlaylistMusic);
+
+                    if (!musicExists)
+                        throw new NotFoundException("Music not found.");
+
+                    // 🎯 VALIDATE PLAYLIST EXISTS AND BELONGS TO USER
+                    var playlistExists =
+                        (from pu in _playlistUserReadRepository.GetAll(false)
+                         where pu.UserId_forPlaylistUser == user.Id
+                         select pu.PlaylistId_forPlaylistUser)
+                        .Contains(model.PlaylistId_forPlaylistMusic);
+
+                    if (!playlistExists)
+                        throw new UnauthorizedException("Playlist not found or not owned by user.");
+
+                    // ✏️ UPDATE ENTITY
+                    playlistMusic.MusicId_forPlaylistMusic = model.MusicId_forPlaylistMusic;
+                    playlistMusic.PlaylistId_forPlaylistMusic = model.PlaylistId_forPlaylistMusic;
+
+                    // 💾 SAVE
+                     _playlistMusicWriteRepository.Update(playlistMusic);
+                    var result = await _playlistMusicWriteRepository.SaveAsync();
+
+                    if (result == -1)
+                        throw new InvalidOperationException("Failed to update PlaylistMusic.");
+
+                    
+
+                    // 🧹 CACHE CLEAR (IMPORTANT!)
+                    await _playlistMusicCacheServiceGetandGetAll.ClearAllPlaylistMusics();
+
+                    // 🔄 OPTIONAL: REBUILD CACHE (recommended)
+                    var updatedData =
+                        (from pu in _playlistUserReadRepository.GetAll(false)
+                         where pu.UserId_forPlaylistUser == user.Id
+
+                         join pm in _playlistMusicReadRepository.GetAll(false)
+                             on pu.PlaylistId_forPlaylistUser equals pm.PlaylistId_forPlaylistMusic
+
+                         join p in _playlistReadRepository.GetAll(false)
+                             on pm.PlaylistId_forPlaylistMusic equals p.Id
+
+                         join m in _musicReadRepository.GetAll(false)
+                             on pm.MusicId_forPlaylistMusic equals m.Id
+
+                         select new PlaylistMusicDTOforGetandGetAll
+                         {
+                             Id = pm.Id,
+
+                             Playlist = new PlaylistDTOforGetandGetAll
+                             {
+                                 Id = p.Id,
+                                 PlaylistName = p.PlaylistName,
+                                 PlaylistDescription = p.PlaylistDescription,
+                                 ImagePlaylist = p.ImagePlaylist,
+                                 PlaylistDatetime = DateTime.Parse(p.PlaylistDatetime)
+                                    
+                             },
+
+                             Music = new MusicDTOforGetandGetAll
+                             {
+                                 Id = m.Id,
+                                 MusicName = m.MusicName,
+                                 MusicFile = m.MusicFile,
+                                 ImageMusic = m.ImageMusic,
+                                 isPopularMusic = m.isPopularMusic
+                             }
+                         }).ToList();
+
+                    await _playlistMusicCacheServiceGetandGetAll.SetAllPlaylistMusics(updatedData);
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
 
-        public Task DeletePlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task DeletePlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+
+                    var user = _userReadRepository
+        .GetAll(false)
+        .FirstOrDefault(x => x.Username == currentUser);
+
+                    if (user == null)
+                        throw new UnauthorizedException("User not found.");
+
+                    // 🔒 OWNERSHIP CHECK (only user's PlaylistMusic)
+                    var playlistMusic = (
+                        from pu in _playlistUserReadRepository.GetAll(false)
+
+                        join pm in _playlistMusicReadRepository.GetAll(false)
+                            on pu.PlaylistId_forPlaylistUser equals pm.PlaylistId_forPlaylistMusic
+
+                        where pu.UserId_forPlaylistUser == user.Id
+                              && pm.Id == Id
+
+                        select pm
+                    ).FirstOrDefault();
+
+                    if (playlistMusic == null)
+                        throw new UnauthorizedException("You do not have permission to delete this PlaylistMusic.");
+
+                    // 🗑️ DELETE ENTITY
+                    _playlistMusicWriteRepository.Remove(playlistMusic);
+
+                    var result = await _playlistMusicWriteRepository.SaveAsync();
+
+                    if (result == -1)
+                        throw new InvalidOperationException("Failed to delete PlaylistMusic.");
+
+                    // 🧹 CACHE CLEAR (IMPORTANT)
+                    await _playlistMusicCacheServiceGetandGetAll.ClearAllPlaylistMusics();
+
+                    // 🔄 REBUILD CACHE (user-specific clean data)
+                    var userPlaylistMusic =
+                        (from pu in _playlistUserReadRepository.GetAll(false)
+                         where pu.UserId_forPlaylistUser == user.Id
+
+                         join pm in _playlistMusicReadRepository.GetAll(false)
+                             on pu.PlaylistId_forPlaylistUser equals pm.PlaylistId_forPlaylistMusic
+
+                         join p in _playlistReadRepository.GetAll(false)
+                             on pm.PlaylistId_forPlaylistMusic equals p.Id
+
+                         join m in _musicReadRepository.GetAll(false)
+                             on pm.MusicId_forPlaylistMusic equals m.Id
+
+                         select new PlaylistMusicDTOforGetandGetAll
+                         {
+                             Id = pm.Id,
+
+                             Playlist = new PlaylistDTOforGetandGetAll
+                             {
+                                 Id = p.Id,
+                                 PlaylistName = p.PlaylistName,
+                                 PlaylistDescription = p.PlaylistDescription,
+                                 ImagePlaylist = p.ImagePlaylist,
+                                 PlaylistDatetime = DateTime.Parse(p.PlaylistDatetime)
+                             },
+
+                             Music = new MusicDTOforGetandGetAll
+                             {
+                                 Id = m.Id,
+                                 MusicName = m.MusicName,
+                                 MusicFile = m.MusicFile,
+                                 ImageMusic = m.ImageMusic,
+                                 isPopularMusic = m.isPopularMusic
+                             }
+                         }).ToList();
+
+                    await _playlistMusicCacheServiceGetandGetAll.SetAllPlaylistMusics(userPlaylistMusic);
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
+
+
+
 
 
         #endregion
 
 
-    }
+        }
 }

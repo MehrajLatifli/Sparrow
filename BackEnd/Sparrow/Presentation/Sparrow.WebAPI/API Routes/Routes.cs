@@ -81,10 +81,15 @@
 
         #region PlaylistMusic
 
-        public const string PlaylistMusic = "PlaylistMusic";
+        public const string PlaylistMusic = "playlistMusic";
         public const string PlaylistMusicById = PlaylistMusic + "/{id:guid}";
         public const string UpdatePlaylistMusic = PlaylistMusic;
         public const string DeletePlaylistMusic = PlaylistMusic + "/{id:guid}";
+
+        public const string GetUserPlaylistsWithMusics = "userPlaylistsWithMusics";
+
+
+
         #endregion
 
     }

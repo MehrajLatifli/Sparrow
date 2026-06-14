@@ -70,6 +70,5 @@ namespace Sparrow.Application.Services.Abstract.MusicServices
         public Task<PlaylistMusicDTOforGetandGetAll> GetByIdPlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal);
         public Task UpdatePlaylistMusic(PlaylistMusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal);
         public Task DeletePlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal);
-
     }
 }
