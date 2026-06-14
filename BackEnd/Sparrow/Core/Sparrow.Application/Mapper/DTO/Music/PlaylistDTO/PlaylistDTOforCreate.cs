@@ -16,7 +16,7 @@ namespace Sparrow.Application.Mapper.DTO.Music.PlaylistDTO
         public string PlaylistDescription { get; set; }
 
         [Required(ErrorMessage = "PlaylistDatetime is required")]
-        public string PlaylistDatetime { get; set; }
+        public DateTime PlaylistDatetime { get; set; }
 
         [Required(ErrorMessage = "ImagePlaylist is required")]
         [AllowedExtensions(new string[] { ".jpg", ".jpeg", ".png", ".gif" })]

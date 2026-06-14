@@ -1,23 +1,15 @@
 ﻿using Sparrow.Application.Mapper.DTO.Music.MusicDTO;
+using Sparrow.Application.Mapper.DTO.Music.PlaylistDTO;
 
 namespace Sparrow.Application.Mapper.DTO.Music.PlaylistMusicDTO
 {
     public class PlaylistMusicDTOforGetandGetAll
     {
-       
-        //public Guid Id { get; set; }
+
+        public Guid Id { get; set; }
 
 
-        //public Guid PlaylistId_forPlaylistMusic { get; set; }
-
-
-        //public Guid MusicId_forPlaylistMusic { get; set; }
-
-        public Guid PlaylistId { get; set; }
-        public string PlaylistName { get; set; }
-        public string PlaylistDescription { get; set; }
-        public string PlaylistImage { get; set; }
-
-        public List<MusicDTOforGetandGetAll> Musics { get; set; }
+        public PlaylistDTOforGetandGetAll Playlist { get; set; }
+        public MusicDTOforGetandGetAll Music { get; set; }
     }
 }

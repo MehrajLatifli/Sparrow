@@ -14,7 +14,7 @@ namespace Sparrow.Application.Mapper.DTO.Music.PlaylistDTO
 
         public string PlaylistDescription { get; set; }
 
-        public string PlaylistDatetime { get; set; }
+        public DateTime PlaylistDatetime { get; set; }
 
         public string ImagePlaylist { get; set; }
 
