@@ -2888,7 +2888,9 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                         .FirstOrDefault(x => x.Username == currentUser);
 
                     if (user == null)
+                    {
                         throw new UnauthorizedException("User not found");
+                    }
 
                     // 🔒 playlist ownership
                     var isOwner = _playlistUserReadRepository
@@ -2898,7 +2900,9 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                             x.PlaylistId_forPlaylistUser == Id);
 
                     if (!isOwner)
+                    {
                         throw new UnauthorizedException("Not owner of playlist");
+                    }
 
                     // 🎯 playlist check (DOĞRU ENTITY)
                     var playlist = _playlistReadRepository
@@ -2906,7 +2910,9 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                         .FirstOrDefault(x => x.Id == Id);
 
                     if (playlist == null)
+                    {
                         throw new NotFoundException("Playlist not found");
+                    }
 
                     // 🎵 MUSICS (FIXED)
                     var musics = (
