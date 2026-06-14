@@ -2769,44 +2769,38 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
 
 
-                    var user = _userReadRepository
-         .GetAll(false)
-         .FirstOrDefault(x => x.Username == currentUser);
+                    var user = _userReadRepository.GetAll(false).FirstOrDefault(x => x.Username == currentUser);
 
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // 🔥 CACHE CHECK (user-specific cache istifadə etməlisən!)
+                    // 🔥 USER CACHE
                     var cached = await _playlistMusicCacheServiceGetandGetAll.GetAllPlaylistMusics();
 
                     if (cached != null && cached.Any())
                         return cached;
 
-                    // 🎯 ONLY USER'S PLAYLISTMUSIC
-
-                    var result =
+                    var data =
                         (from pu in _playlistUserReadRepository.GetAll(false)
                          where pu.UserId_forPlaylistUser == user.Id
-                        
+
                          join pm in _playlistMusicReadRepository.GetAll(false)
                              on pu.PlaylistId_forPlaylistUser equals pm.PlaylistId_forPlaylistMusic
-                        
+
                          join p in _playlistReadRepository.GetAll(false)
                              on pm.PlaylistId_forPlaylistMusic equals p.Id
-                        
+
                          join m in _musicReadRepository.GetAll(false)
                              on pm.MusicId_forPlaylistMusic equals m.Id
-                        
+
                          select new
                          {
                              pm,
                              p,
                              m
-                         }).ToList(); // 🔥 materialize FIRST
+                         }).ToList();
 
-
-
-                    var list = result.Select(x =>
+                    var list = data.Select(x =>
                     {
                         DateTime playlistDate;
 
@@ -2822,7 +2816,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                                 PlaylistName = x.p.PlaylistName,
                                 PlaylistDescription = x.p.PlaylistDescription,
                                 ImagePlaylist = x.p.ImagePlaylist,
-                                PlaylistDatetime = playlistDate
+                                PlaylistDatetime = DateTime.TryParse(x.p.PlaylistDatetime, out var dt)? dt: DateTime.UtcNow
                             },
 
                             Music = new MusicDTOforGetandGetAll
