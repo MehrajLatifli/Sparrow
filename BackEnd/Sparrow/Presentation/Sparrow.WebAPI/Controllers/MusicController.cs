@@ -598,5 +598,20 @@ namespace Sparrow.WebAPI.Controllers
 
             return Ok(PlaylistMusics);
         }
+
+
+        [HttpGet]
+        [MapToApiVersion("1.0")]
+        [Route(Routes.PlaylistMusicById)]
+        [Produces("application/json")]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Get_PlaylistMusicByIdForAdmin", "Get_PlaylistMusicByIdForUser" }, CustomUserPermissions = new[] { "Read" })]
+        public async Task<IActionResult> ReadPlaylistMusic(Guid id)
+        {
+
+            var PlaylistMusic = await _musicService.GetByIdPlaylistMusic(id, User);
+
+
+            return Ok(PlaylistMusic);
+        }
     }
 }

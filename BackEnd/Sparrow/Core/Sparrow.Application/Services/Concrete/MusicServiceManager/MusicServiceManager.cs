@@ -2711,12 +2711,54 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     {
 
 
-                        var PlaylistMusics = _playlistMusicReadRepository.GetAll();
+                        var user = _userReadRepository
+                       .GetAll(false)
+                       .First(x => x.Username == currentUser);
 
-                        var PlaylistMusicDTOs = _mapper.Map<List<PlaylistMusicDTOforGetandGetAll>>(PlaylistMusics);
+                        var cacheData =
+                        (
+                            from pu in _playlistUserReadRepository.GetAll(false)
+                            where pu.UserId_forPlaylistUser == user.Id
+
+                            join p in _playlistReadRepository.GetAll(false)
+                                on pu.PlaylistId_forPlaylistUser equals p.Id
+
+                            select new PlaylistMusicDTOforGetandGetAll
+                            {
+                                //Id =
+                                //    _playlistMusicReadRepository.GetAll(false)
+                                //        .Where(pm => pm.PlaylistId_forPlaylistMusic == p.Id)
+                                //        .Select(pm => pm.Id)
+                                //        .FirstOrDefault(),
+
+                                PlaylistId = p.Id,
+                                PlaylistName = p.PlaylistName,
+                                PlaylistDescription = p.PlaylistDescription,
+                                PlaylistImage = p.ImagePlaylist,
+
+                                Musics =
+                                (
+                                    from pm in _playlistMusicReadRepository.GetAll(false)
+
+                                    join m in _musicReadRepository.GetAll(false)
+                                        on pm.MusicId_forPlaylistMusic equals m.Id
+
+                                    where pm.PlaylistId_forPlaylistMusic == p.Id
+
+                                    select new MusicDTOforGetandGetAll
+                                    {
+                                        Id = m.Id,
+                                        MusicName = m.MusicName,
+                                        MusicFile = m.MusicFile,
+                                        ImageMusic = m.ImageMusic,
+                                        isPopularMusic = m.isPopularMusic
+                                    }
+                                ).ToList()
+                            }
+                        ).ToList();
 
 
-                        await _playlistMusicCacheServiceGetandGetAll.SetAllPlaylistMusics(PlaylistMusicDTOs);
+                        await _playlistMusicCacheServiceGetandGetAll.SetAllPlaylistMusics(cacheData);
                     }
                 }
                 else
@@ -2758,7 +2800,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // 🔥 CACHE (USER-BASED OLMAQLIDIR)
+   
                     var cached = await _playlistMusicCacheServiceGetandGetAll
                         .GetAllPlaylistMusics();
 
@@ -2768,40 +2810,40 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
 
                     var result =
-    from pu in _playlistUserReadRepository.GetAll(false)
-    where pu.UserId_forPlaylistUser == user.Id
+                    from pu in _playlistUserReadRepository.GetAll(false)
+                    where pu.UserId_forPlaylistUser == user.Id
 
-    join p in _playlistReadRepository.GetAll(false)
-        on pu.PlaylistId_forPlaylistUser equals p.Id
+                    join p in _playlistReadRepository.GetAll(false)
+                        on pu.PlaylistId_forPlaylistUser equals p.Id
 
-    select new PlaylistMusicDTOforGetandGetAll
-    {
-        Id =
-            _playlistMusicReadRepository.GetAll(false)
-                .Where(pm => pm.PlaylistId_forPlaylistMusic == p.Id)
-                .Select(pm => pm.Id)
-                .FirstOrDefault(), 
+                    select new PlaylistMusicDTOforGetandGetAll
+                    {
+                        PlaylistId = p.Id,
+                        PlaylistName = p.PlaylistName,
+                        PlaylistDescription = p.PlaylistDescription,
+                        PlaylistImage = p.ImagePlaylist,
 
-        PlaylistId = p.Id,
-        PlaylistName = p.PlaylistName,
-        PlaylistDescription = p.PlaylistDescription,
-        PlaylistImage = p.ImagePlaylist,
+                        // 🔥 FIX: real PlaylistMusic Id (ilk tapılan)
+                        //Id = _playlistMusicReadRepository.GetAll(false)
+                        //        .Where(pm => pm.PlaylistId_forPlaylistMusic == p.Id)
+                        //        .Select(pm => pm.Id)
+                        //        .FirstOrDefault(),
 
-        Musics =
-            (from pm in _playlistMusicReadRepository.GetAll(false)
-             join m in _musicReadRepository.GetAll(false)
-                 on pm.MusicId_forPlaylistMusic equals m.Id
-             where pm.PlaylistId_forPlaylistMusic == p.Id
+                        Musics =
+                            (from pm in _playlistMusicReadRepository.GetAll(false)
+                             join m in _musicReadRepository.GetAll(false)
+                                 on pm.MusicId_forPlaylistMusic equals m.Id
+                             where pm.PlaylistId_forPlaylistMusic == p.Id
 
-             select new MusicDTOforGetandGetAll
-             {
-                 Id = pm.MusicId_forPlaylistMusic,
-                 MusicName = m.MusicName,
-                 MusicFile = m.MusicFile,
-                 ImageMusic = m.ImageMusic,
-                 isPopularMusic = m.isPopularMusic
-             }).ToList()
-    };
+                             select new MusicDTOforGetandGetAll
+                             {
+                                 Id = m.Id,
+                                 MusicName = m.MusicName,
+                                 MusicFile = m.MusicFile,
+                                 ImageMusic = m.ImageMusic,
+                                 isPopularMusic = m.isPopularMusic
+                             }).ToList()
+                    };
 
 
 
@@ -2832,10 +2874,78 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             }
         }
 
-        public Task<PlaylistMusicDTOforGetandGetAll> GetByIdPlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal)
+        public async Task<PlaylistMusicDTOforGetandGetAll> GetByIdPlaylistMusic(Guid Id, ClaimsPrincipal claimsPrincipal)
         {
-            throw new NotImplementedException();
+     
+            if (claimsPrincipal.Identity.IsAuthenticated)
+            {
+                if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
+                {
+                    var currentUser = claimsPrincipal.Identity.Name;
+
+                    var user = _userReadRepository
+                        .GetAll(false)
+                        .FirstOrDefault(x => x.Username == currentUser);
+
+                    if (user == null)
+                        throw new UnauthorizedException("User not found");
+
+                    // 🔒 playlist ownership
+                    var isOwner = _playlistUserReadRepository
+                        .GetAll(false)
+                        .Any(x =>
+                            x.UserId_forPlaylistUser == user.Id &&
+                            x.PlaylistId_forPlaylistUser == Id);
+
+                    if (!isOwner)
+                        throw new UnauthorizedException("Not owner of playlist");
+
+                    // 🎯 playlist check (DOĞRU ENTITY)
+                    var playlist = _playlistReadRepository
+                        .GetAll(false)
+                        .FirstOrDefault(x => x.Id == Id);
+
+                    if (playlist == null)
+                        throw new NotFoundException("Playlist not found");
+
+                    // 🎵 MUSICS (FIXED)
+                    var musics = (
+                        from pm in _playlistMusicReadRepository.GetAll(false)
+                        join m in _musicReadRepository.GetAll(false)
+                            on pm.MusicId_forPlaylistMusic equals m.Id
+                        where pm.PlaylistId_forPlaylistMusic == Id
+                        select new MusicDTOforGetandGetAll
+                        {
+                            Id = m.Id,
+                            MusicName = m.MusicName,
+                            MusicFile = m.MusicFile,
+                            ImageMusic = m.ImageMusic,
+                            isPopularMusic = m.isPopularMusic
+                        }
+                    ).ToList();
+
+                    return new PlaylistMusicDTOforGetandGetAll
+                    {
+                        PlaylistId = playlist.Id,
+                        PlaylistName = playlist.PlaylistName,
+                        PlaylistDescription = playlist.PlaylistDescription,
+                        PlaylistImage = playlist.ImagePlaylist,
+                        Musics = musics
+                    };
+
+                }
+                else
+                {
+                    throw new UnauthorizedException("Current user is not authenticated.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Current user is not authenticated.");
+            }
         }
+
+        
 
         public Task UpdatePlaylistMusic(PlaylistMusicDTOforUpdate model, ClaimsPrincipal claimsPrincipal)
         {

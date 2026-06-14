@@ -5,7 +5,7 @@ namespace Sparrow.Application.Mapper.DTO.Music.PlaylistMusicDTO
     public class PlaylistMusicDTOforGetandGetAll
     {
        
-        public Guid Id { get; set; }
+        //public Guid Id { get; set; }
 
 
         //public Guid PlaylistId_forPlaylistMusic { get; set; }
