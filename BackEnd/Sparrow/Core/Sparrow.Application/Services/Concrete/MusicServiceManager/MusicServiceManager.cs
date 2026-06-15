@@ -2200,8 +2200,14 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             {
                 if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
                 {
-                    var currentUser = claimsPrincipal.Identity.Name;
+                    var username = claimsPrincipal.Identity.Name;
 
+                    var user = _userReadRepository
+                        .GetAll(false)
+                        .FirstOrDefault(x => x.Username == username);
+
+                    if (user == null)
+                        throw new UnauthorizedException("User not found.");
 
 
                     string connectionString = GetAzureConnectionString(ConnectionStringAzure);
@@ -2255,7 +2261,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     {
                         Id = Guid.NewGuid(),
                         PlaylistId_forPlaylistUser = Playlist.Id,
-                        UserId_forPlaylistUser = _userReadRepository.GetAll().FirstOrDefault(x => x.Username == currentUser).Id
+                        UserId_forPlaylistUser = _userReadRepository.GetAll().FirstOrDefault(x => x.Username == username).Id
                     };
 
 
@@ -2292,42 +2298,16 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     }
                     else
                     {
-                        var usersDict = _userReadRepository.GetAll().ToDictionary(x => x.Id);
+                        var playlists = (from pu in _playlistUserReadRepository.GetAll(false)
+                                         where pu.UserId_forPlaylistUser == user.Id
+                                         join p in _playlistReadRepository.GetAll(false)
+                                             on pu.PlaylistId_forPlaylistUser equals p.Id
+                                         select p)
+                       .ToList();
 
-                        var playlistsDict = _playlistReadRepository.GetAll()
-                            .ToDictionary(x => x.Id);
+                        var dto = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(playlists);
 
-                        var playlistUsers = _playlistUserReadRepository.GetAll().ToList();
-
-                        var result = playlistUsers.Select(x => new PlaylistUserDTOforGetandGetAll
-                        {
-                            Id = x.Id,
-
-                            User = usersDict.ContainsKey(x.UserId_forPlaylistUser)
-                                ? new UserDTOforGetandGetAll
-                                {
-                                    Id = usersDict[x.UserId_forPlaylistUser].Id,
-                                    Username = usersDict[x.UserId_forPlaylistUser].Username,
-                                    Name = usersDict[x.UserId_forPlaylistUser].Name,
-                                    Email = usersDict[x.UserId_forPlaylistUser].Email
-                                }
-                                : null,
-
-                            Playlist = playlistsDict.ContainsKey(x.PlaylistId_forPlaylistUser)
-                                ? new PlaylistDTOforGetandGetAll
-                                {
-                                    Id = playlistsDict[x.PlaylistId_forPlaylistUser].Id,
-                                    PlaylistName = playlistsDict[x.PlaylistId_forPlaylistUser].PlaylistName,
-                                    ImagePlaylist = playlistsDict[x.PlaylistId_forPlaylistUser].ImagePlaylist,
-                                    PlaylistDescription = playlistsDict[x.PlaylistId_forPlaylistUser].PlaylistDescription,
-                                    PlaylistDatetime = DateTime.Parse(playlistsDict[x.PlaylistId_forPlaylistUser].PlaylistDatetime)
-                                }
-                                : null
-                        }).ToList();
-
-                        var PlaylistUseDTOs = _mapper.Map<List<PlaylistUserDTOforGetandGetAll>>(result).OrderBy(x=>x.Playlist.PlaylistDatetime).ToList();
-
-                        await _playlistUserCacheServiceGetandGetAll.SetAllPlaylisUsers(PlaylistUseDTOs);
+                        await _playlistCacheServiceGetandGetAll.SetAllPlaylists(dto);
                     }
 
                 }
@@ -2357,7 +2337,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
                     var cachedPlaylists = await _playlistCacheServiceGetandGetAll.GetAllPlaylists();
 
-                    if (cachedPlaylists != null && cachedPlaylists.Count > 0)
+                    if (cachedPlaylists.Count == _playlistReadRepository.GetAll().Count())
                     {
                         return cachedPlaylists;
                     }
@@ -2374,9 +2354,9 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                    .Distinct()
                    .ToList();
 
+                    await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
 
                     var playlistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(playlists);
-
 
 
                     await _playlistCacheServiceGetandGetAll.SetAllPlaylists(playlistDTOs);
@@ -2435,16 +2415,32 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     //              })
                     //                .ToList();
 
-                    var PlaylistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(Playlists);
+                    var currentUserId = _userReadRepository
+                                           .GetAll(false)
+                                           .Where(x => x.Username == currentUser)
+                                           .Select(x => x.Id)
+                                           .FirstOrDefault();
 
-                    var playlist = PlaylistDTOs.Where(p => p.Id == Id).FirstOrDefault();
+
+                    var playlist = (
+                          from pu in _playlistUserReadRepository.GetAll(false)
+                          join p in _playlistReadRepository.GetAll(false)
+                              on pu.PlaylistId_forPlaylistUser equals p.Id
+                          where pu.UserId_forPlaylistUser == currentUserId
+                                && p.Id == Id
+                          select p
+                                  ).FirstOrDefault();
 
                     if (playlist == null)
                     {
-                        throw new NotFoundException("You have entered an invalid Playlist ID.");
+                        throw new NotFoundException(
+                            "Playlist not found or does not belong to the current user.");
                     }
 
-                    return playlist;
+                    var playlistDto = _mapper.Map<PlaylistDTOforGetandGetAll>(playlist); 
+                    
+                    
+                    return playlistDto;
                 }
                 else
                 {
@@ -2463,7 +2459,35 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             {
                 if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
                 {
-                    var currentUser = claimsPrincipal.Identity.Name;
+                    var currentUsername = claimsPrincipal.Identity.Name;
+
+                    var user = _userReadRepository
+                        .GetAll(false)
+                        .FirstOrDefault(x => x.Username == currentUsername);
+
+                    if (user == null)
+                        throw new UnauthorizedException("User not found.");
+
+                    // 🔥 OWNERSHIP CHECK (playlist bu user-ə məxsusdurmu?)
+                    var isOwner = _playlistUserReadRepository
+                        .GetAll(false)
+                        .Any(pu =>
+                            pu.UserId_forPlaylistUser == user.Id &&
+                            pu.PlaylistId_forPlaylistUser == model.Id);
+
+                    if (!isOwner)
+                        throw new NotFoundException("Playlist not found or does not belong to current user.");
+
+                    // 🔥 ONLY ONE ENTITY LOAD (NO DUPLICATION → FIX FOR TRACKING ERROR)
+                    var playlist = _playlistReadRepository
+                        .GetAll(false)
+                        .FirstOrDefault(p => p.Id == model.Id);
+
+                    if (playlist == null)
+                        throw new NotFoundException("Playlist not found.");
+
+
+
 
                     string connectionString = GetAzureConnectionString(connectionStringAzure);
 
@@ -2503,12 +2527,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
 
 
-                    var playlist = await _playlistReadRepository.GetByIdAsync(model.Id);
-
-                    if (playlist == null)
-                    {
-                        throw new NotFoundException("You have entered an invalid Playlist ID.");
-                    }
+                    
 
                     playlist.Id = model.Id;
                     playlist.PlaylistName = model.PlaylistName;
@@ -2534,11 +2553,21 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     {
 
 
-                        var Playlists = _playlistReadRepository.GetAll();
+                        var playlists = _playlistUserReadRepository
+                            .GetAll(false)
+                            .Where(pu => pu.UserId_forPlaylistUser == user.Id)
+                            .Join(_playlistReadRepository.GetAll(false),
+                                pu => pu.PlaylistId_forPlaylistUser,
+                                p => p.Id,
+                                (pu, p) => p)
+                            .Distinct()
+                            .ToList();
 
-                        var PlaylistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(Playlists);
 
-                        await _playlistCacheServiceGetandGetAll.SetAllPlaylists(PlaylistDTOs);
+
+                        var playlistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(playlists);
+
+                        await _playlistCacheServiceGetandGetAll.SetAllPlaylists(playlistDTOs);
                     }
 
 
@@ -2561,80 +2590,72 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
             {
                 if (!_mapper.Map<List<UserDTOforGetandGetAll>>(_userReadRepository.GetAll(false)).AsEnumerable().Any(i => string.IsNullOrEmpty(i.RefreshToken) && i.Username == claimsPrincipal.Identity.Name))
                 {
-                    var currentUser = claimsPrincipal.Identity.Name;
+                    await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
 
 
-                    var Playlist = await _playlistReadRepository.GetByIdAsync(Id);
+                    var username = claimsPrincipal.Identity.Name;
 
-                    if (Playlist == null)
-                    {
-                        throw new NotFoundException("You have entered an invalid Playlist ID.");
-                    }
-
-
-
-                    _playlistWriteRepository.Remove(Playlist);
-                    var PlaylistResult = await _playlistWriteRepository.SaveAsync();
-
-                    if (PlaylistResult == -1)
-                    {
-                        await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
-                        throw new InvalidOperationException("Failed to delete the Playlist.");
-
-                    }
-                    else
-                    {
-
-
-                        var Playlists = _playlistReadRepository.GetAll();
-
-                        var PlaylistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(Playlists);
-
-                        await _playlistCacheServiceGetandGetAll.SetAllPlaylists(PlaylistDTOs);
-                    }
-
-
-
-
-                    var currentUserId = _userReadRepository
+                    var user = _userReadRepository
                         .GetAll(false)
-                        .Where(u => u.Username == currentUser)
-                        .Select(u => u.Id)
-                        .FirstOrDefault();
+                        .FirstOrDefault(x => x.Username == username);
 
+                    if (user == null)
+                        throw new UnauthorizedException("User not found.");
+
+                    // =========================
+                    // OWNERSHIP CHECK
+                    // =========================
                     var playlistUser = _playlistUserReadRepository
                         .GetAll(false)
                         .FirstOrDefault(x =>
-                            x.PlaylistId_forPlaylistUser == Id &&
-                            x.UserId_forPlaylistUser == currentUserId);
+                            x.UserId_forPlaylistUser == user.Id &&
+                            x.PlaylistId_forPlaylistUser == Id);
+
+                    if (playlistUser == null)
+                        throw new NotFoundException("Playlist not found or does not belong to current user.");
+
+                    // =========================
+                    // SAFE DELETE (NO TRACKING ISSUES)
+                    // =========================
+                    _playlistWriteRepository.Remove(new Playlist { Id = Id });
+
+                    var result = await _playlistWriteRepository.SaveAsync();
 
 
-                    if (playlistUser != null)
+
+                    if (result == -1)
                     {
-
-
-
-
-                        _playlistUserWriteRepository.Remove(playlistUser);
-                        var PlaylistUserResult = await _playlistUserWriteRepository.SaveAsync();
-
-                        if (PlaylistUserResult == -1)
-                        {
-                            await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
-                            throw new InvalidOperationException("Failed to delete the PlaylistUser.");
-
-                        }
-                        else
-                        {
-
-
-                            var PlaylistUsers = _playlistReadRepository.GetAll();
-
-                            var PlaylistUserDTOs = _mapper.Map<List<PlaylistUserDTOforGetandGetAll>>(PlaylistUsers);
-
-                            await _playlistUserCacheServiceGetandGetAll.SetAllPlaylisUsers(PlaylistUserDTOs);
-                        }
+                        await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
+                        throw new InvalidOperationException("Failed to delete playlist.");
                     }
+
+                    // =========================
+                    // DELETE RELATION
+                    // =========================
+
+                    // =========================
+                    // CACHE REFRESH
+                    // =========================
+
+                    await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
+
+                    var playlists = _playlistUserReadRepository
+                        .GetAll(false)
+                        .Where(x => x.UserId_forPlaylistUser == user.Id)
+                        .Join(_playlistReadRepository.GetAll(false),
+                            pu => pu.PlaylistId_forPlaylistUser,
+                            p => p.Id,
+                            (pu, p) => p)
+                        .Distinct()
+                        .ToList();
+
+                    var playlistDTOs = _mapper.Map<List<PlaylistDTOforGetandGetAll>>(playlists);
+
+                   
+
+                    await _playlistCacheServiceGetandGetAll.SetAllPlaylists(playlistDTOs);
+
+
 
                 }
                 else

@@ -542,7 +542,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.UpdatePlaylist)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Put_PlaylistForAdmin" }, CustomUserPermissions = new[] { "Update" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Put_PlaylistForAdmin", "Put_PlaylistForUser" }, CustomUserPermissions = new[] { "Update" })]
         public async Task<IActionResult> UpdatePlaylist([FromForm] PlaylistDTOforUpdate model)
         {
 
@@ -558,7 +558,7 @@ namespace Sparrow.WebAPI.Controllers
         [MapToApiVersion("1.0")]
         [Route(Routes.DeletePlaylist)]
         [Produces("application/json")]
-        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin }, CustomRolePermissions = new[] { "Delete_PlaylistForAdmin" }, CustomUserPermissions = new[] { "Delete" })]
+        [CustomAuthorize(CustomRoles = new[] { UserRoles.Admin, UserRoles.User }, CustomRolePermissions = new[] { "Delete_PlaylistForAdmin","Delete_PlaylistForUser" }, CustomUserPermissions = new[] { "Delete" })]
         public async Task<IActionResult> DeletePlaylist(Guid id)
         {
 
