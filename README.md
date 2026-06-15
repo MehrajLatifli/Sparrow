@@ -68,7 +68,8 @@ Connection string:   AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUw
 <h1> Seq log server </h1>
 docker run --name seq -d --restart unless-stopped -e ACCEPT_EULA=Y -e SEQ_PASSWORD=1234 -p 5341:80 datalust/seq:latest
 
-</br>
+</br></br>
+
 
 username: admin 
 </br>
