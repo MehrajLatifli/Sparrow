@@ -2468,7 +2468,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // 🔥 OWNERSHIP CHECK (playlist bu user-ə məxsusdurmu?)
+                    
                     var isOwner = _playlistUserReadRepository
                         .GetAll(false)
                         .Any(pu =>
@@ -2478,7 +2478,6 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (!isOwner)
                         throw new NotFoundException("Playlist not found or does not belong to current user.");
 
-                    // 🔥 ONLY ONE ENTITY LOAD (NO DUPLICATION → FIX FOR TRACKING ERROR)
                     var playlist = _playlistReadRepository
                         .GetAll(false)
                         .FirstOrDefault(p => p.Id == model.Id);
@@ -2602,9 +2601,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // =========================
-                    // OWNERSHIP CHECK
-                    // =========================
+           
                     var playlistUser = _playlistUserReadRepository
                         .GetAll(false)
                         .FirstOrDefault(x =>
@@ -2614,9 +2611,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (playlistUser == null)
                         throw new NotFoundException("Playlist not found or does not belong to current user.");
 
-                    // =========================
-                    // SAFE DELETE (NO TRACKING ISSUES)
-                    // =========================
+
                     _playlistWriteRepository.Remove(new Playlist { Id = Id });
 
                     var result = await _playlistWriteRepository.SaveAsync();
@@ -2629,13 +2624,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                         throw new InvalidOperationException("Failed to delete playlist.");
                     }
 
-                    // =========================
-                    // DELETE RELATION
-                    // =========================
-
-                    // =========================
-                    // CACHE REFRESH
-                    // =========================
+      
 
                     await _playlistCacheServiceGetandGetAll.ClearAllPlaylists();
 
@@ -2795,7 +2784,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // 🔥 USER CACHE
+                    
                     var cached = await _playlistMusicCacheServiceGetandGetAll.GetAllPlaylistMusics();
 
                     if (cached != null && cached.Any())
@@ -2837,7 +2826,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                                 PlaylistName = x.p.PlaylistName,
                                 PlaylistDescription = x.p.PlaylistDescription,
                                 ImagePlaylist = x.p.ImagePlaylist,
-                                PlaylistDatetime = DateTime.TryParse(x.p.PlaylistDatetime, out var dt)? dt: DateTime.UtcNow
+                                PlaylistDatetime = DateTime.Parse(x.p.PlaylistDatetime)
                             },
 
                             Music = new MusicDTOforGetandGetAll
@@ -2980,7 +2969,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // 🔒 CHECK OWNERSHIP (user bu PlaylistMusic-ə sahibdirmi?)
+                    
                     var playlistMusic = (
                         from pu in _playlistUserReadRepository.GetAll(false)
 
@@ -2996,7 +2985,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (playlistMusic == null)
                         throw new UnauthorizedException("You do not have permission to update this PlaylistMusic.");
 
-                    // 🎯 VALIDATE MUSIC EXISTS
+                   
                     var musicExists = _musicReadRepository
                         .GetAll(false)
                         .Any(x => x.Id == model.MusicId_forPlaylistMusic);
@@ -3004,7 +2993,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (!musicExists)
                         throw new NotFoundException("Music not found.");
 
-                    // 🎯 VALIDATE PLAYLIST EXISTS AND BELONGS TO USER
+                    
                     var playlistExists =
                         (from pu in _playlistUserReadRepository.GetAll(false)
                          where pu.UserId_forPlaylistUser == user.Id
@@ -3014,11 +3003,10 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (!playlistExists)
                         throw new UnauthorizedException("Playlist not found or not owned by user.");
 
-                    // ✏️ UPDATE ENTITY
+             
                     playlistMusic.MusicId_forPlaylistMusic = model.MusicId_forPlaylistMusic;
                     playlistMusic.PlaylistId_forPlaylistMusic = model.PlaylistId_forPlaylistMusic;
 
-                    // 💾 SAVE
                      _playlistMusicWriteRepository.Update(playlistMusic);
                     var result = await _playlistMusicWriteRepository.SaveAsync();
 
@@ -3027,10 +3015,9 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
                     
 
-                    // 🧹 CACHE CLEAR (IMPORTANT!)
                     await _playlistMusicCacheServiceGetandGetAll.ClearAllPlaylistMusics();
 
-                    // 🔄 OPTIONAL: REBUILD CACHE (recommended)
+                   
                     var updatedData =
                         (from pu in _playlistUserReadRepository.GetAll(false)
                          where pu.UserId_forPlaylistUser == user.Id
@@ -3097,7 +3084,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (user == null)
                         throw new UnauthorizedException("User not found.");
 
-                    // 🔒 OWNERSHIP CHECK (only user's PlaylistMusic)
+                    
                     var playlistMusic = (
                         from pu in _playlistUserReadRepository.GetAll(false)
 
@@ -3113,7 +3100,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (playlistMusic == null)
                         throw new UnauthorizedException("You do not have permission to delete this PlaylistMusic.");
 
-                    // 🗑️ DELETE ENTITY
+                 
                     _playlistMusicWriteRepository.Remove(playlistMusic);
 
                     var result = await _playlistMusicWriteRepository.SaveAsync();
@@ -3121,10 +3108,10 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     if (result == -1)
                         throw new InvalidOperationException("Failed to delete PlaylistMusic.");
 
-                    // 🧹 CACHE CLEAR (IMPORTANT)
+                    
                     await _playlistMusicCacheServiceGetandGetAll.ClearAllPlaylistMusics();
 
-                    // 🔄 REBUILD CACHE (user-specific clean data)
+                  
                     var userPlaylistMusic =
                         (from pu in _playlistUserReadRepository.GetAll(false)
                          where pu.UserId_forPlaylistUser == user.Id
