@@ -422,40 +422,7 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
 
         #endregion
 
-        private string GetContentType(string extension)
-        {
-            return extension.ToLower() switch
-            {
-                ".png" => "image/png",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".gif" => "image/gif",
-                _ => "application/octet-stream"
-            };
-        }
 
-        private string GetContentType2(string extension)
-        {
-            return extension.ToLower() switch
-            {
-                ".mp3" => "audio/mpeg",
-                ".wav" => "audio/wav",
-                ".flac" => "audio/flac",
-                _ => "application/octet-stream"
-            };
-        }
-
-        private string GetAzureConnectionString(string connectionStringAzure)
-        {
-            var envConnection = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_AZURE_STORAGE_CONNECTION_STRING");
-
-            if (!string.IsNullOrWhiteSpace(envConnection))
-                return envConnection;
-
-            if (!string.IsNullOrWhiteSpace(connectionStringAzure))
-                return connectionStringAzure;
-
-            throw new InvalidOperationException("Azure Storage connection string is not configured.");
-        }
 
         #region Album
 
@@ -785,6 +752,17 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                             x.Id == model.AlbumId_forArtistAlbum);
 
 
+                    var isExistArtistAlbum = _artistAlbumReadRepository
+                        .GetAll(false)
+                        .Any(x =>
+                            x.ArtistId_forArtistAlbum == model.ArtistId_forArtistAlbum &&
+                            x.AlbumId_forArtistAlbum == model.AlbumId_forArtistAlbum);
+
+                    if (isExistArtistAlbum)
+                    {
+                        throw new ConflictException("This artist-album relationship already exists.");
+                    }
+
 
 
                     if (isArtist == false || isAlbum == false)
@@ -804,13 +782,49 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     else
                     {
 
+                        var artists = _artistReadRepository
+                                .GetAll(false)
+                                .ToDictionary(x => x.Id);
 
-                        var artistAlbums = _artistAlbumReadRepository.GetAll();
+                        var albums = _albumReadRepository
+                            .GetAll(false)
+                            .ToDictionary(x => x.Id);
 
-                        var ArtistAlbumDTOs = _mapper.Map<List<ArtistAlbumDTOforGetandGetAll>>(artistAlbums);
+                        var artistAlbums = _artistAlbumReadRepository
+                            .GetAll(false)
+                            .ToList();
 
+                        var artistAlbumDTOs = artistAlbums
+                            .Select(x => new ArtistAlbumDTOforGetandGetAll
+                            {
+                                Id = x.Id,
 
-                        await _artistAlbumCacheServiceGetandGetAll.SetAllArtistAlbums(ArtistAlbumDTOs);
+                                Artist = artists.TryGetValue(
+                                    x.ArtistId_forArtistAlbum,
+                                    out var artist)
+                                    ? new ArtistDTOforGetandGetAll
+                                    {
+                                        Id = artist.Id,
+                                        ArtistName = artist.ArtistName,
+                                        ImageArtist = artist.ImageArtist
+                                    }
+                                    : null,
+
+                                Album = albums.TryGetValue(
+                                    x.AlbumId_forArtistAlbum,
+                                    out var album)
+                                    ? new AlbumDTOforGetandGetAll
+                                    {
+                                        Id = album.Id,
+                                        AlbumName = album.AlbumName,
+                                        ImageAlbum = album.ImageAlbum
+                                    }
+                                    : null
+                            })
+                            .ToList();
+
+                        await _artistAlbumCacheServiceGetandGetAll
+                            .SetAllArtistAlbums(artistAlbumDTOs);
                     }
                 }
                 else
@@ -1531,6 +1545,21 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                         throw new NotFoundException("You have entered an invalid Album ID or Music ID.");
                     }
 
+                    var exists = _musicAlbumReadRepository
+                       .GetAll(false)
+                       .Any(x =>
+                           x.MusicId_forMusicAlbum == model.MusicId_forMusicAlbum &&
+                           x.AlbumId_forMusicAlbum == model.AlbumId_forMusicAlbum);
+
+
+                    if (exists)
+                    {
+                        throw new ConflictException("This Music-Album relation already exists.");
+                    }
+
+
+
+
                     await _musicAlbumWriteRepository.AddAsync(MusicAlbum);
                     var musicAlbumResult = await _musicAlbumWriteRepository.SaveAsync();
 
@@ -1544,12 +1573,41 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                     {
 
 
-                        var MusicAlbums = _musicAlbumReadRepository.GetAll();
+                        var musics = _musicReadRepository.GetAll(false)
+                            .ToDictionary(x => x.Id);
 
-                        var MusicAlbumDTOs = _mapper.Map<List<MusicAlbumDTOforGetandGetAll>>(MusicAlbums);
+                        var albums = _albumReadRepository.GetAll(false)
+                            .ToDictionary(x => x.Id);
 
+                        var musicAlbumsRaw = _musicAlbumReadRepository.GetAll(false)
+                            .ToList(); // 🔥 IMPORTANT: materialize BEFORE projection
 
-                        await _musicAlbumCacheServiceGetandGetAll.SetAllMusicAlbums(MusicAlbumDTOs);
+                        var dto = musicAlbumsRaw.Select(x =>
+                        {
+                            musics.TryGetValue(x.MusicId_forMusicAlbum, out var music);
+                            albums.TryGetValue(x.AlbumId_forMusicAlbum, out var album);
+
+                            return new MusicAlbumDTOforGetandGetAll
+                            {
+                                Id = x.Id,
+                                Music = music == null ? null : new MusicDTOforGetandGetAll
+                                {
+                                    Id = music.Id,
+                                    MusicName = music.MusicName,
+                                    MusicFile = music.MusicFile,
+                                    ImageMusic = music.ImageMusic,
+                                    isPopularMusic = music.isPopularMusic
+                                },
+                                Album = album == null ? null : new AlbumDTOforGetandGetAll
+                                {
+                                    Id = album.Id,
+                                    AlbumName = album.AlbumName,
+                                    ImageAlbum = album.ImageAlbum
+                                }
+                            };
+                        }).ToList();
+
+                        await _musicAlbumCacheServiceGetandGetAll.SetAllMusicAlbums(dto);
                     }
                 }
                 else
@@ -3169,5 +3227,42 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
         #endregion
 
 
+
+
+        private string GetContentType(string extension)
+        {
+            return extension.ToLower() switch
+            {
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".gif" => "image/gif",
+                _ => "application/octet-stream"
+            };
         }
+
+        private string GetContentType2(string extension)
+        {
+            return extension.ToLower() switch
+            {
+                ".mp3" => "audio/mpeg",
+                ".wav" => "audio/wav",
+                ".flac" => "audio/flac",
+                _ => "application/octet-stream"
+            };
+        }
+
+        private string GetAzureConnectionString(string connectionStringAzure)
+        {
+            var envConnection = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_AZURE_STORAGE_CONNECTION_STRING");
+
+            if (!string.IsNullOrWhiteSpace(envConnection))
+                return envConnection;
+
+            if (!string.IsNullOrWhiteSpace(connectionStringAzure))
+                return connectionStringAzure;
+
+            throw new InvalidOperationException("Azure Storage connection string is not configured.");
+        }
+
+    }
 }

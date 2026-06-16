@@ -113,7 +113,6 @@ namespace Sparrow.WebAPI
 
             app.UseHttpsRedirection();
 
-            app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseCors("AllowAllPolicy");
 
@@ -121,6 +120,8 @@ namespace Sparrow.WebAPI
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<ExceptionMiddleware>();
 
             app.MapControllers();
 
