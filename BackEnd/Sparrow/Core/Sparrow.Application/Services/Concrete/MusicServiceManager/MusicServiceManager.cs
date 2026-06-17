@@ -2759,6 +2759,18 @@ namespace Sparrow.Application.Services.Concrete.MusicServiceManager
                         throw new NotFoundException("You have entered an invalid Playlist ID or Music ID.");
                     }
 
+
+                    var isExists = _playlistMusicReadRepository
+                                  .GetAll(false)
+                                  .Any(x =>
+                                      x.PlaylistId_forPlaylistMusic == model.PlaylistId_forPlaylistMusic &&
+                                      x.MusicId_forPlaylistMusic == model.MusicId_forPlaylistMusic);
+
+                    if (isExists)
+                    {
+                        throw new InvalidOperationException("This music already exists in the selected playlist.");
+                    }
+
                     await _playlistMusicWriteRepository.AddAsync(PlaylistMusic);
                     var PlaylistMusicResult = await _playlistMusicWriteRepository.SaveAsync();
 
