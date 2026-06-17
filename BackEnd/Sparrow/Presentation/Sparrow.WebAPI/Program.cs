@@ -74,6 +74,7 @@ namespace Sparrow.WebAPI
             });
 
             builder.Services.AddTransient<ExceptionMiddleware>();
+            builder.Services.AddTransient<GeoLocationMiddleware>();
 
             builder.Services.AddHttpClient();
 
@@ -122,6 +123,7 @@ namespace Sparrow.WebAPI
             app.UseAuthorization();
 
             app.UseMiddleware<ExceptionMiddleware>();
+            app.UseMiddleware<GeoLocationMiddleware>();
 
             app.MapControllers();
 
